@@ -2,7 +2,7 @@
    FACILITY TRACKER MODULAR VIEW SYSTEM
    PURPOSE: Tenant Maintenance Request Form
    LOCATION: /tenant_request/tenant_request_form.js
-   VERSION: v2026_06_30_tenant_request_form_date_time_fix
+   VERSION: v2026_06_30_tenant_request_form_remove_category
    UPDATED: 2026-06-30
 ================================================================ */
 
@@ -38,21 +38,6 @@ export function renderTenantRequestForm({ tenant }) {
                 placeholder="Example: Bathroom sink leaking"
                 autocomplete="off"
             >
-
-            <label class="tenant-request-label" for="tenantRequestCategory">
-                Category
-            </label>
-            <select id="tenantRequestCategory" class="tenant-request-select">
-                <option value="">Select category</option>
-                <option value="plumbing">Plumbing</option>
-                <option value="electrical">Electrical</option>
-                <option value="hvac">A/C or Heating</option>
-                <option value="appliance">Appliance</option>
-                <option value="door_lock">Door / Lock</option>
-                <option value="pest">Pest Issue</option>
-                <option value="general">General Maintenance</option>
-                <option value="other">Other</option>
-            </select>
 
             <label class="tenant-request-label" for="tenantRequestDescription">
                 Describe the problem
@@ -113,7 +98,7 @@ export function renderTenantRequestForm({ tenant }) {
         </div>
 
         <div class="tenant-request-footer-tag">
-            tenant_request_form.js | v2026_06_30_tenant_request_form_date_time_fix
+            tenant_request_form.js | v2026_06_30_tenant_request_form_remove_category
         </div>
     `;
 }
