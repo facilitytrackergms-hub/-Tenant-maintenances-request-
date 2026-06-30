@@ -2,7 +2,7 @@
    FACILITY TRACKER MODULAR VIEW SYSTEM
    PURPOSE: Tenant Maintenance Request Data Service
    LOCATION: /tenant_request/tenant_request_data.js
-   VERSION: v2026_06_29_tenant_request_data
+   VERSION: v2026_06_29_tenant_request_data_secure_rpc
    UPDATED: 2026-06-29
 ================================================================ */
 
@@ -23,11 +23,10 @@ export async function fetchTenantByRequestCode(requestCode) {
     }
 
     const { data, error } = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('request_public_uuid', requestCode)
-        .eq('active_status', 'active')
-        .single();
+        .rpc('get_tenant_by_request_code', {
+            request_code: requestCode
+        })
+        .maybeSingle();
 
     if (error) {
         console.error('Fetch tenant by request code error:', error);
@@ -41,43 +40,64 @@ export async function fetchTenantByRequestCode(requestCode) {
 ================================================================ */
 
 export async function createTenantMaintenanceRequest(payload) {
-    const { data, error } = await supabase
-        .from('tenant_maintenance_requests')
-        .insert([payload])
-        .select()
-        .single();
+    const requestCode = getTenantCodeFromUrl();
 
-    if (error) {
-        console.error('Create tenant maintenance request error:', error);
-    }
-
-    return { data, error };
-}
-
-/* ================================================================
-   FETCH TENANT REQUESTS BY TENANT
-   OPTIONAL FOR LATER USE
-================================================================ */
-
-export async function fetchTenantMaintenanceRequests(tenantId) {
-    if (!tenantId) {
+    if (!requestCode) {
         return {
-            data: [],
+            data: null,
             error: {
-                message: 'Missing tenant id.'
+                message: 'Missing tenant request code.'
             }
         };
     }
 
     const { data, error } = await supabase
-        .from('tenant_maintenance_requests')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false });
+        .rpc('submit_tenant_maintenance_request', {
+            request_code: requestCode,
+            request_title_text: payload.request_title || '',
+            request_description_text: payload.request_description || '',
+            request_category_text: payload.request_category || '',
+            best_day_text: payload.best_day || '',
+            best_time_text: payload.best_time || '',
+            permission_to_enter_text: payload.permission_to_enter || '',
+            entry_instructions_text: payload.entry_instructions || ''
+        });
 
     if (error) {
-        console.error('Fetch tenant maintenance requests error:', error);
+        console.error('Create tenant maintenance request error:', error);
     }
 
-    return { data: data || [], error };
+    return {
+        data: data ? { id: data } : null,
+        error
+    };
+}
+
+/* ================================================================
+   NOT USED PUBLICLY
+   KEEP TABLE LOCKED DOWN
+================================================================ */
+
+export async function fetchTenantMaintenanceRequests() {
+    return {
+        data: [],
+        error: {
+            message: 'Tenant request history is not public.'
+        }
+    };
+}
+
+/* ================================================================
+   HELPERS
+================================================================ */
+
+function getTenantCodeFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    return (
+        urlParams.get('tenant') ||
+        urlParams.get('tenant_code') ||
+        urlParams.get('request_code') ||
+        ''
+    ).trim();
 }
