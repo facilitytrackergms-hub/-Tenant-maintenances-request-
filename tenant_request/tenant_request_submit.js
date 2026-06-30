@@ -2,8 +2,8 @@
    FACILITY TRACKER MODULAR VIEW SYSTEM
    PURPOSE: Tenant Maintenance Request Submit Logic
    LOCATION: /tenant_request/tenant_request_submit.js
-   VERSION: v2026_06_29_tenant_request_submit
-   UPDATED: 2026-06-29
+   VERSION: v2026_06_30_tenant_request_submit_time_from_to
+   UPDATED: 2026-06-30
 ================================================================ */
 
 import { createTenantMaintenanceRequest } from './tenant_request_data.js';
@@ -41,12 +41,18 @@ export function attachTenantRequestSubmitHandler({ tenant }) {
 async function handleTenantRequestSubmit({ tenant }) {
     clearTenantRequestMessage();
 
+    const repairDescription = getInputValue('tenantRequestDescription');
+    const bestTimeFrom = getInputValue('tenantRequestBestTimeFrom');
+    const bestTimeTo = getInputValue('tenantRequestBestTimeTo');
+
     const formValues = {
-        request_title: getInputValue('tenantRequestTitle'),
-        request_category: getSelectValue('tenantRequestCategory'),
-        request_description: getInputValue('tenantRequestDescription'),
-        best_day: getSelectValue('tenantRequestBestDay'),
-        best_time: getSelectValue('tenantRequestBestTime'),
+        request_title: buildRequestTitle(repairDescription),
+        request_category: '',
+        request_description: repairDescription,
+        best_day: getInputValue('tenantRequestBestDay'),
+        best_time: buildBestTimeText(bestTimeFrom, bestTimeTo),
+        best_time_from: bestTimeFrom,
+        best_time_to: bestTimeTo,
         permission_to_enter: getSelectValue('tenantRequestPermissionToEnter'),
         entry_instructions: getInputValue('tenantRequestEntryInstructions')
     };
@@ -90,24 +96,24 @@ async function handleTenantRequestSubmit({ tenant }) {
 ================================================================ */
 
 function validateTenantRequestForm(formValues) {
-    if (!formValues.request_title) {
+    if (!formValues.request_description) {
         return 'Please enter what needs repair.';
     }
 
-    if (!formValues.request_category) {
-        return 'Please select a category.';
-    }
-
-    if (!formValues.request_description) {
-        return 'Please describe the problem.';
-    }
-
     if (!formValues.best_day) {
-        return 'Please select the best day.';
+        return 'Please select the best date.';
     }
 
-    if (!formValues.best_time) {
-        return 'Please select the best time.';
+    if (!formValues.best_time_from) {
+        return 'Please select the start time.';
+    }
+
+    if (!formValues.best_time_to) {
+        return 'Please select the end time.';
+    }
+
+    if (formValues.best_time_from >= formValues.best_time_to) {
+        return 'Please choose a valid time window.';
     }
 
     if (!formValues.permission_to_enter) {
@@ -122,11 +128,10 @@ function validateTenantRequestForm(formValues) {
 ================================================================ */
 
 function resetTenantRequestForm() {
-    setValue('tenantRequestTitle', '');
-    setValue('tenantRequestCategory', '');
     setValue('tenantRequestDescription', '');
     setValue('tenantRequestBestDay', '');
-    setValue('tenantRequestBestTime', '');
+    setValue('tenantRequestBestTimeFrom', '');
+    setValue('tenantRequestBestTimeTo', '');
     setValue('tenantRequestPermissionToEnter', '');
     setValue('tenantRequestEntryInstructions', '');
 }
@@ -136,4 +141,47 @@ function setValue(id, value) {
     if (!input) return;
 
     input.value = value;
+}
+
+/* ================================================================
+   HELPERS
+================================================================ */
+
+function buildRequestTitle(description) {
+    if (!description) return 'Tenant maintenance request';
+
+    const cleanDescription = description.trim();
+
+    if (cleanDescription.length <= 60) {
+        return cleanDescription;
+    }
+
+    return `${cleanDescription.slice(0, 60)}...`;
+}
+
+function buildBestTimeText(fromValue, toValue) {
+    if (!fromValue || !toValue) return '';
+
+    return `${formatTimeToAmPm(fromValue)} - ${formatTimeToAmPm(toValue)}`;
+}
+
+function formatTimeToAmPm(timeValue) {
+    const [hourText, minuteText] = String(timeValue || '').split(':');
+
+    let hour = Number(hourText);
+    const minute = minuteText || '00';
+
+    if (Number.isNaN(hour)) {
+        return timeValue;
+    }
+
+    const suffix = hour >= 12 ? 'PM' : 'AM';
+
+    hour = hour % 12;
+
+    if (hour === 0) {
+        hour = 12;
+    }
+
+    return `${hour}:${minute} ${suffix}`;
 }
