@@ -1,5 +1,3 @@
-sb_publishable_TKkIh2e_DHkJdhXiMq9lPA_k2jeVcug
-
 
 /* ================================================================
    NAME     : app_controls/supabaseClient.js
