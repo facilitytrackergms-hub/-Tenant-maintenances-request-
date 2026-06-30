@@ -2,7 +2,7 @@
    FACILITY TRACKER MODULAR VIEW SYSTEM
    PURPOSE: Tenant Maintenance Request Form
    LOCATION: /tenant_request/tenant_request_form.js
-   VERSION: v2026_06_30_tenant_request_form_one_time_box
+   VERSION: v2026_06_30_tenant_request_form_time_from_to
    UPDATED: 2026-06-30
 ================================================================ */
 
@@ -46,14 +46,33 @@ export function renderTenantRequestForm({ tenant }) {
                 type="date"
             >
 
-            <label class="tenant-request-label" for="tenantRequestBestTime">
+            <label class="tenant-request-label">
                 Best time
             </label>
-            <input
-                id="tenantRequestBestTime"
-                class="tenant-request-input"
-                type="time"
-            >
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                    <label class="tenant-request-label" for="tenantRequestBestTimeFrom" style="margin-top:0;">
+                        From
+                    </label>
+                    <input
+                        id="tenantRequestBestTimeFrom"
+                        class="tenant-request-input"
+                        type="time"
+                    >
+                </div>
+
+                <div>
+                    <label class="tenant-request-label" for="tenantRequestBestTimeTo" style="margin-top:0;">
+                        To
+                    </label>
+                    <input
+                        id="tenantRequestBestTimeTo"
+                        class="tenant-request-input"
+                        type="time"
+                    >
+                </div>
+            </div>
 
             <label class="tenant-request-label" for="tenantRequestPermissionToEnter">
                 Permission to enter apartment if you are not home?
@@ -82,7 +101,7 @@ export function renderTenantRequestForm({ tenant }) {
         </div>
 
         <div class="tenant-request-footer-tag">
-            tenant_request_form.js | v2026_06_30_tenant_request_form_one_time_box
+            tenant_request_form.js | v2026_06_30_tenant_request_form_time_from_to
         </div>
     `;
 }
