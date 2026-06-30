@@ -2,8 +2,8 @@
    FACILITY TRACKER MODULAR VIEW SYSTEM
    PURPOSE: Tenant Maintenance Request Form
    LOCATION: /tenant_request/tenant_request_form.js
-   VERSION: v2026_06_29_tenant_request_form
-   UPDATED: 2026-06-29
+   VERSION: v2026_06_30_tenant_request_form_date_time_fix
+   UPDATED: 2026-06-30
 ================================================================ */
 
 import { escapeHtml } from './tenant_request_helpers.js';
@@ -64,29 +64,26 @@ export function renderTenantRequestForm({ tenant }) {
             ></textarea>
 
             <label class="tenant-request-label" for="tenantRequestBestDay">
-                Best day for assessment or repair
+                Best date for assessment or repair
             </label>
-            <select id="tenantRequestBestDay" class="tenant-request-select">
-                <option value="">Select day</option>
-                <option value="any_day">Any day</option>
-                <option value="monday">Monday</option>
-                <option value="tuesday">Tuesday</option>
-                <option value="wednesday">Wednesday</option>
-                <option value="thursday">Thursday</option>
-                <option value="friday">Friday</option>
-                <option value="saturday">Saturday</option>
-                <option value="sunday">Sunday</option>
-            </select>
+            <input
+                id="tenantRequestBestDay"
+                class="tenant-request-input"
+                type="date"
+            >
 
             <label class="tenant-request-label" for="tenantRequestBestTime">
-                Best time
+                Best time window
             </label>
             <select id="tenantRequestBestTime" class="tenant-request-select">
                 <option value="">Select time</option>
-                <option value="any_time">Any time</option>
-                <option value="morning">Morning</option>
-                <option value="afternoon">Afternoon</option>
-                <option value="evening">Evening</option>
+                <option value="8:00 AM - 10:00 AM">8:00 AM - 10:00 AM</option>
+                <option value="9:00 AM - 11:00 AM">9:00 AM - 11:00 AM</option>
+                <option value="10:00 AM - 12:00 PM">10:00 AM - 12:00 PM</option>
+                <option value="12:00 PM - 2:00 PM">12:00 PM - 2:00 PM</option>
+                <option value="1:00 PM - 3:00 PM">1:00 PM - 3:00 PM</option>
+                <option value="2:00 PM - 4:00 PM">2:00 PM - 4:00 PM</option>
+                <option value="3:00 PM - 5:00 PM">3:00 PM - 5:00 PM</option>
             </select>
 
             <label class="tenant-request-label" for="tenantRequestPermissionToEnter">
@@ -116,7 +113,7 @@ export function renderTenantRequestForm({ tenant }) {
         </div>
 
         <div class="tenant-request-footer-tag">
-            tenant_request_form.js | v2026_06_29_tenant_request_form
+            tenant_request_form.js | v2026_06_30_tenant_request_form_date_time_fix
         </div>
     `;
 }
