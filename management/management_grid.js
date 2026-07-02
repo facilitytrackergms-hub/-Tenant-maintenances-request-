@@ -1,8 +1,8 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Management Screen - Tenants and Request Links
+   PURPOSE: Management Screen - Login, Tenants, and Request Links
    LOCATION: /management/management_grid.js
-   VERSION: v2026_07_02_management_grid_split_build
+   VERSION: v2026_07_02_management_grid_login_added
    UPDATED: 2026-07-02
 ================================================================ */
 
@@ -12,6 +12,13 @@ import {
     updateTenantActiveStatus
 } from './management_data.js';
 
+import {
+    getCurrentSession,
+    signInManager,
+    signOutManager,
+    fetchCurrentManagerProfile
+} from './management_auth.js';
+
 import { injectManagementStyles } from './management_styles.js';
 
 /* ================================================================
@@ -20,6 +27,7 @@ import { injectManagementStyles } from './management_styles.js';
 
 let managementContainer = null;
 let tenantsCache = [];
+let currentManager = null;
 
 /* ================================================================
    MAIN RENDER
@@ -35,13 +43,149 @@ export async function renderManagementGrid(containerOrContext = {}) {
 
     injectManagementStyles();
 
+    const { session } = await getCurrentSession();
+
+    if (!session) {
+        renderManagerLogin();
+        return;
+    }
+
+    const { data: manager, error } = await fetchCurrentManagerProfile();
+
+    if (error || !manager) {
+        renderAccessDenied();
+        return;
+    }
+
+    currentManager = manager;
+
+    await renderManagementHome();
+}
+
+/* ================================================================
+   LOGIN SCREEN
+================================================================ */
+
+function renderManagerLogin() {
+    managementContainer.innerHTML = `
+        <div class="management-page">
+            <div class="management-card">
+                <h1 class="management-title">Manager Login</h1>
+                <p class="management-subtitle">
+                    Log in to manage tenants and request links.
+                </p>
+
+                <input id="managementLoginEmail" class="management-input" type="email" placeholder="Email">
+                <input id="managementLoginPassword" class="management-input" type="password" placeholder="Password">
+
+                <button id="managementLoginButton" class="management-main-button">
+                    Login
+                </button>
+
+                <div id="managementMessage" class="management-message"></div>
+            </div>
+
+            <div class="management-footer-tag">
+                management_grid.js | v2026_07_02_management_grid_login_added
+            </div>
+        </div>
+    `;
+
+    const loginButton = document.getElementById('managementLoginButton');
+
+    if (loginButton) {
+        loginButton.onclick = async () => {
+            await handleManagerLogin();
+        };
+    }
+}
+
+async function handleManagerLogin() {
+    clearManagementMessage();
+
+    const email = getInputValue('managementLoginEmail');
+    const password = getInputValue('managementLoginPassword');
+
+    if (!email) {
+        showManagementMessage('Enter email.', 'error');
+        return;
+    }
+
+    if (!password) {
+        showManagementMessage('Enter password.', 'error');
+        return;
+    }
+
+    setLoginButtonDisabled(true);
+
+    const { error } = await signInManager({
+        email,
+        password
+    });
+
+    setLoginButtonDisabled(false);
+
+    if (error) {
+        showManagementMessage(error.message || 'Login failed.', 'error');
+        return;
+    }
+
+    await renderManagementGrid({
+        container: managementContainer
+    });
+}
+
+/* ================================================================
+   ACCESS DENIED
+================================================================ */
+
+function renderAccessDenied() {
+    managementContainer.innerHTML = `
+        <div class="management-page">
+            <div class="management-card">
+                <h1 class="management-title">Access Denied</h1>
+                <p class="management-subtitle">
+                    This login is not connected to an active manager profile.
+                </p>
+
+                <button id="managementLogoutButton" class="management-main-button">
+                    Logout
+                </button>
+
+                <div id="managementMessage" class="management-message"></div>
+            </div>
+
+            <div class="management-footer-tag">
+                management_grid.js | v2026_07_02_management_grid_login_added
+            </div>
+        </div>
+    `;
+
+    const logoutButton = document.getElementById('managementLogoutButton');
+
+    if (logoutButton) {
+        logoutButton.onclick = async () => {
+            await handleManagerLogout();
+        };
+    }
+}
+
+/* ================================================================
+   MANAGEMENT HOME
+================================================================ */
+
+async function renderManagementHome() {
     managementContainer.innerHTML = `
         <div class="management-page">
             <div class="management-card">
                 <h1 class="management-title">Tenant Management</h1>
                 <p class="management-subtitle">
-                    Create tenants and copy their maintenance request links.
+                    Logged in as ${escapeHtml(currentManager?.full_name || 'Manager')}
                 </p>
+
+                <button id="managementLogoutButton" class="management-small-button" style="width:100%; margin-bottom:14px;">
+                    Logout
+                </button>
 
                 <div class="management-section-title">Add Tenant</div>
 
@@ -68,7 +212,7 @@ export async function renderManagementGrid(containerOrContext = {}) {
             </div>
 
             <div class="management-footer-tag">
-                management_grid.js | v2026_07_02_management_grid_split_build
+                management_grid.js | v2026_07_02_management_grid_login_added
             </div>
         </div>
     `;
@@ -84,12 +228,28 @@ export async function renderManagementGrid(containerOrContext = {}) {
 
 function attachManagementHandlers() {
     const addButton = document.getElementById('managementAddTenantButton');
+    const logoutButton = document.getElementById('managementLogoutButton');
 
     if (addButton) {
         addButton.onclick = async () => {
             await handleAddTenant();
         };
     }
+
+    if (logoutButton) {
+        logoutButton.onclick = async () => {
+            await handleManagerLogout();
+        };
+    }
+}
+
+async function handleManagerLogout() {
+    await signOutManager();
+
+    currentManager = null;
+    tenantsCache = [];
+
+    renderManagerLogin();
 }
 
 /* ================================================================
@@ -220,6 +380,8 @@ function renderTenantsList() {
                     <div><strong>Phone:</strong> ${escapeHtml(tenant.phone || '')}</div>
                     <div><strong>Email:</strong> ${escapeHtml(tenant.email || '')}</div>
                     <div><strong>Location ID:</strong> ${escapeHtml(tenant.location_id || '')}</div>
+                    <div><strong>Created by manager ID:</strong> ${escapeHtml(tenant.created_by_manager_id || '')}</div>
+                    <div><strong>Assigned manager ID:</strong> ${escapeHtml(tenant.assigned_manager_id || '')}</div>
                 </div>
 
                 <label class="management-link-label">
@@ -414,6 +576,14 @@ function setAddButtonDisabled(isDisabled) {
 
     button.disabled = isDisabled;
     button.textContent = isDisabled ? 'Adding...' : 'Add Tenant';
+}
+
+function setLoginButtonDisabled(isDisabled) {
+    const button = document.getElementById('managementLoginButton');
+    if (!button) return;
+
+    button.disabled = isDisabled;
+    button.textContent = isDisabled ? 'Logging in...' : 'Login';
 }
 
 function escapeHtml(value) {
