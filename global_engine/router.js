@@ -2,8 +2,8 @@
    FACILITY TRACKER MODULAR VIEW SYSTEM
    PURPOSE: Tenant Request App Router
    LOCATION: /global_engine/router.js
-   VERSION: v2026_07_02_tenant_management_route_added
-   UPDATED: 2026-07-02
+   VERSION: v2026_07_03_facilitys_route_added
+   UPDATED: 2026-07-03
 ================================================================ */
 
 /* ================================================================
@@ -19,6 +19,11 @@ const routes = {
     management: {
         path: '../management/management_grid.js',
         renderFunction: 'renderManagementGrid'
+    },
+
+    facilitys: {
+        path: '../facilitys/facilitys_grid.js',
+        renderFunction: 'renderFacilitysGrid'
     }
 };
 
@@ -190,7 +195,7 @@ function renderRouterError(container, message) {
                 font-size:11px;
                 color:#64748b;
             ">
-                router.js | v2026_07_02_tenant_management_route_added
+                router.js | v2026_07_03_facilitys_route_added
             </div>
         </div>
     `;
