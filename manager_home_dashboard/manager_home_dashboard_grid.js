@@ -2,7 +2,7 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Manager Home Dashboard
    LOCATION: /manager_home_dashboard/manager_home_dashboard_grid.js
-   VERSION: v2026_07_05_manager_home_dashboard_two_door_method
+   VERSION: v2026_07_05_manager_home_facilitys_only
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -75,7 +75,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="manager-home-footer-tag">
-                manager_home_dashboard_grid.js | v2026_07_05_manager_home_dashboard_two_door_method
+                manager_home_dashboard_grid.js | v2026_07_05_manager_home_facilitys_only
             </div>
         </div>
     `;
@@ -110,7 +110,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="manager-home-footer-tag">
-                manager_home_dashboard_grid.js | v2026_07_05_manager_home_dashboard_two_door_method
+                manager_home_dashboard_grid.js | v2026_07_05_manager_home_facilitys_only
             </div>
         </div>
     `;
@@ -138,10 +138,6 @@ function renderManagerHomeDashboard() {
                 </p>
 
                 <div class="manager-home-button-grid">
-                    <button id="managerHomeManagersButton" class="manager-home-button">
-                        Managers
-                    </button>
-
                     <button id="managerHomeFacilitysButton" class="manager-home-button">
                         Facilitys
                     </button>
@@ -151,7 +147,7 @@ function renderManagerHomeDashboard() {
             </div>
 
             <div class="manager-home-footer-tag">
-                manager_home_dashboard_grid.js | v2026_07_05_manager_home_dashboard_two_door_method
+                manager_home_dashboard_grid.js | v2026_07_05_manager_home_facilitys_only
             </div>
         </div>
     `;
@@ -164,14 +160,7 @@ function renderManagerHomeDashboard() {
 ================================================================ */
 
 function attachDashboardHandlers() {
-    const managersButton = document.getElementById('managerHomeManagersButton');
     const facilitysButton = document.getElementById('managerHomeFacilitysButton');
-
-    if (managersButton) {
-        managersButton.onclick = () => {
-            goToView('management');
-        };
-    }
 
     if (facilitysButton) {
         facilitysButton.onclick = () => {
