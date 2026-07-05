@@ -1,8 +1,8 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Tenants Grid - Add Tenant, Find Unit, Tenant Detail
+   PURPOSE: Tenants Grid - Add Tenant, Auto Find Unit, Tenant Detail
    LOCATION: /tenants/tenants_grid.js
-   VERSION: v2026_07_05_tenants_grid_one_view_search
+   VERSION: v2026_07_05_tenants_grid_auto_search_no_button
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -102,7 +102,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
             </div>
         </div>
     `;
@@ -135,7 +135,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
             </div>
         </div>
     `;
@@ -168,7 +168,7 @@ function renderMissingFacility() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
             </div>
         </div>
     `;
@@ -219,7 +219,7 @@ function renderAddTenantView() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
             </div>
         </div>
     `;
@@ -274,11 +274,7 @@ function renderFindTenantView() {
 
                 <input id="tenantSearchInput" class="tenants-input" placeholder="Search unit number">
 
-                <button id="tenantSearchButton" class="tenants-main-button">
-                    Search Unit
-                </button>
-
-                <button id="tenantGoToAddButton" class="tenants-small-button" style="width:100%; margin-top:14px;">
+                <button id="tenantGoToAddButton" class="tenants-small-button" style="width:100%; margin-top:4px;">
                     Add New Tenant
                 </button>
 
@@ -294,7 +290,7 @@ function renderFindTenantView() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
             </div>
         </div>
     `;
@@ -305,7 +301,6 @@ function renderFindTenantView() {
 function attachFindTenantHandlers() {
     const backButton = document.getElementById('tenantsBackButton');
     const searchInput = document.getElementById('tenantSearchInput');
-    const searchButton = document.getElementById('tenantSearchButton');
     const addButton = document.getElementById('tenantGoToAddButton');
 
     if (backButton) {
@@ -317,18 +312,6 @@ function attachFindTenantHandlers() {
     if (searchInput) {
         searchInput.oninput = () => {
             renderSearchResults(searchInput.value);
-        };
-
-        searchInput.onkeydown = (event) => {
-            if (event.key === 'Enter') {
-                renderSearchResults(searchInput.value);
-            }
-        };
-    }
-
-    if (searchButton) {
-        searchButton.onclick = () => {
-            renderSearchResults(getInputValue('tenantSearchInput'));
         };
     }
 
@@ -398,7 +381,7 @@ function renderTenantDetail(tenant) {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
             </div>
         </div>
     `;
