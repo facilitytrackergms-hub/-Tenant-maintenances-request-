@@ -1,9 +1,9 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Facilitys Screen - Facility Names and Addresses
+   PURPOSE: Facilitys Screen - Facility Buttons and Dashboard Navigation
    LOCATION: /facilitys/facilitys_grid.js
-   VERSION: v2026_07_03_facilitys_grid_first_build
-   UPDATED: 2026-07-03
+   VERSION: v2026_07_05_facility_buttons_dashboard_nav
+   UPDATED: 2026-07-05
 ================================================================ */
 
 import {
@@ -81,7 +81,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_03_facilitys_grid_first_build
+                facilitys_grid.js | v2026_07_05_facility_buttons_dashboard_nav
             </div>
         </div>
     `;
@@ -114,7 +114,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_03_facilitys_grid_first_build
+                facilitys_grid.js | v2026_07_05_facility_buttons_dashboard_nav
             </div>
         </div>
     `;
@@ -171,7 +171,7 @@ function renderFacilitysHome() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_03_facilitys_grid_first_build
+                facilitys_grid.js | v2026_07_05_facility_buttons_dashboard_nav
             </div>
         </div>
     `;
@@ -310,7 +310,7 @@ function renderFacilitysList() {
         const isActive = facility.active_status === 'active';
 
         return `
-            <div class="facilitys-item-card" data-facility-id="${escapeHtml(facility.id)}">
+            <div class="facilitys-item-card facilitys-open-card" data-open-facility="${escapeHtml(facility.id)}">
                 <div class="facilitys-item-header">
                     <div>
                         <div class="facilitys-item-name">
@@ -326,14 +326,6 @@ function renderFacilitysList() {
                     <div class="${isActive ? 'facilitys-status-active' : 'facilitys-status-inactive'}">
                         ${escapeHtml(facility.active_status || 'inactive')}
                     </div>
-                </div>
-
-                <div class="facilitys-item-details">
-                    <div><strong>ID:</strong> ${escapeHtml(facility.id || '')}</div>
-                    <div><strong>Phone:</strong> ${escapeHtml(facility.phone || '')}</div>
-                    <div><strong>Created by manager ID:</strong> ${escapeHtml(facility.created_by_manager_id || '')}</div>
-                    <div><strong>Assigned manager ID:</strong> ${escapeHtml(facility.assigned_manager_id || '')}</div>
-                    <div><strong>Notes:</strong> ${escapeHtml(facility.notes || '')}</div>
                 </div>
 
                 <div class="facilitys-button-row">
@@ -353,12 +345,50 @@ function renderFacilitysList() {
 ================================================================ */
 
 function attachFacilityCardHandlers() {
+    document.querySelectorAll('[data-open-facility]').forEach((card) => {
+        card.onclick = () => {
+            const facilityId = card.getAttribute('data-open-facility');
+            openFacilityDashboard(facilityId);
+        };
+    });
+
     document.querySelectorAll('[data-toggle-facility]').forEach((button) => {
-        button.onclick = async () => {
+        button.onclick = async (event) => {
+            event.stopPropagation();
+
             const facilityId = button.getAttribute('data-toggle-facility');
             await toggleFacilityActiveStatus(facilityId);
         };
     });
+}
+
+function openFacilityDashboard(facilityId) {
+    const facility = findFacilityById(facilityId);
+
+    if (!facility) {
+        showFacilitysMessage('Facility not found.', 'error');
+        return;
+    }
+
+    if (facility.active_status !== 'active') {
+        showFacilitysMessage('This facility is inactive.', 'error');
+        return;
+    }
+
+    const context = {
+        facilityId: facility.id,
+        facility: facility
+    };
+
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('manager_home_dashboard', context);
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'manager_home_dashboard');
+    url.searchParams.set('facility_id', facility.id);
+    window.location.href = url.toString();
 }
 
 async function toggleFacilityActiveStatus(facilityId) {
