@@ -1,14 +1,15 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Tenants Grid - Add Tenant, Auto Find Unit, Tenant Detail, Request History
+   PURPOSE: Tenants Grid - Add Tenant, Auto Find Unit, Tenant Detail, Request History, Edit Tenant
    LOCATION: /tenants/tenants_grid.js
-   VERSION: v2026_07_05_tenants_grid_request_history_dashboard
+   VERSION: v2026_07_05_tenants_grid_edit_text_call
    UPDATED: 2026-07-05
 ================================================================ */
 
 import {
     fetchTenantsByFacilityId,
     createTenant,
+    updateTenant,
     updateTenantStatus,
     fetchTenantMaintenanceRequestsByTenantId,
     updateTenantMaintenanceRequest
@@ -19,7 +20,7 @@ import {
     fetchCurrentManagerProfile
 } from '../management/management_auth.js';
 
-import { injectTenantsStyles } from './tenants_styles.js?v=20260705_tenants_request_history_dashboard_1';
+import { injectTenantsStyles } from './tenants_styles.js?v=20260705_tenants_edit_text_call_1';
 
 /* ================================================================
    STATE
@@ -106,7 +107,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
             </div>
         </div>
     `;
@@ -139,7 +140,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
             </div>
         </div>
     `;
@@ -172,7 +173,7 @@ function renderMissingFacility() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
             </div>
         </div>
     `;
@@ -224,7 +225,7 @@ function renderAddTenantView() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
             </div>
         </div>
     `;
@@ -296,7 +297,7 @@ function renderFindTenantView() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
             </div>
         </div>
     `;
@@ -375,10 +376,14 @@ function renderTenantDetail(tenant) {
                         Requests
                     </button>
 
-                    <button id="tenantTextLinkButton" class="tenants-small-button">
-                        Text Link
+                    <button id="tenantTextCallButton" class="tenants-small-button">
+                        Text / Call
                     </button>
                 </div>
+
+                <button id="tenantEditButton" class="tenants-main-button" style="margin-top:12px;">
+                    Edit Tenant
+                </button>
 
                 <button id="tenantStatusButton" class="${isActive ? 'tenants-warning-button' : 'tenants-main-button'}">
                     ${isActive ? 'Deactivate Tenant' : 'Reactivate Tenant'}
@@ -388,7 +393,7 @@ function renderTenantDetail(tenant) {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
             </div>
         </div>
     `;
@@ -400,7 +405,8 @@ function attachTenantDetailHandlers() {
     const backButton = document.getElementById('tenantDetailBackButton');
     const copyLinkButton = document.getElementById('tenantCopyLinkButton');
     const requestsButton = document.getElementById('tenantRequestsButton');
-    const textLinkButton = document.getElementById('tenantTextLinkButton');
+    const textCallButton = document.getElementById('tenantTextCallButton');
+    const editButton = document.getElementById('tenantEditButton');
     const statusButton = document.getElementById('tenantStatusButton');
 
     if (backButton) {
@@ -422,15 +428,220 @@ function attachTenantDetailHandlers() {
         };
     }
 
-    if (textLinkButton) {
-        textLinkButton.onclick = () => {
-            textTenantRequestLink();
+    if (textCallButton) {
+        textCallButton.onclick = () => {
+            renderTenantTextCallView();
+        };
+    }
+
+    if (editButton) {
+        editButton.onclick = () => {
+            renderEditTenantView();
         };
     }
 
     if (statusButton) {
         statusButton.onclick = async () => {
             await handleTenantStatusToggle();
+        };
+    }
+}
+
+/* ================================================================
+   EDIT TENANT VIEW
+================================================================ */
+
+function renderEditTenantView() {
+    if (!selectedTenant) {
+        renderFindTenantView();
+        return;
+    }
+
+    tenantsContainer.innerHTML = `
+        <div class="tenants-page">
+            <div class="tenants-card">
+                <h1 class="tenants-title">Edit Tenant</h1>
+                <p class="tenants-subtitle">
+                    Unit ${escapeHtml(selectedTenant.unit_number || '')}
+                </p>
+
+                <button id="tenantEditBackButton" class="tenants-small-button" style="width:100%; margin-bottom:14px;">
+                    Back To Unit Detail
+                </button>
+
+                <input id="tenantEditUnitInput" class="tenants-input" placeholder="Unit number" value="${escapeHtml(selectedTenant.unit_number || '')}">
+                <input id="tenantEditNameInput" class="tenants-input" placeholder="Tenant name" value="${escapeHtml(selectedTenant.tenant_name || '')}">
+                <input id="tenantEditPhoneInput" class="tenants-input" placeholder="Phone" value="${escapeHtml(selectedTenant.phone || '')}">
+                <input id="tenantEditEmailInput" class="tenants-input" placeholder="Email" value="${escapeHtml(selectedTenant.email || '')}">
+                <textarea id="tenantEditNotesInput" class="tenants-textarea" placeholder="Notes">${escapeHtml(selectedTenant.notes || '')}</textarea>
+
+                <button id="tenantSaveEditButton" class="tenants-main-button">
+                    Save Tenant
+                </button>
+
+                <div id="tenantsMessage" class="tenants-message"></div>
+            </div>
+
+            <div class="tenants-footer-tag">
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
+            </div>
+        </div>
+    `;
+
+    attachEditTenantHandlers();
+}
+
+function attachEditTenantHandlers() {
+    const backButton = document.getElementById('tenantEditBackButton');
+    const saveButton = document.getElementById('tenantSaveEditButton');
+
+    if (backButton) {
+        backButton.onclick = () => {
+            renderTenantDetail(selectedTenant);
+        };
+    }
+
+    if (saveButton) {
+        saveButton.onclick = async () => {
+            await handleUpdateTenant();
+        };
+    }
+}
+
+async function handleUpdateTenant() {
+    clearTenantsMessage();
+
+    if (!selectedTenant) {
+        showTenantsMessage('Tenant not found.', 'error');
+        return;
+    }
+
+    const unitNumber = getInputValue('tenantEditUnitInput');
+    const tenantName = getInputValue('tenantEditNameInput');
+    const phone = getInputValue('tenantEditPhoneInput');
+    const email = getInputValue('tenantEditEmailInput');
+    const notes = getInputValue('tenantEditNotesInput');
+
+    if (!unitNumber) {
+        showTenantsMessage('Enter unit number.', 'error');
+        return;
+    }
+
+    if (!tenantName) {
+        showTenantsMessage('Enter tenant name.', 'error');
+        return;
+    }
+
+    setEditTenantButtonDisabled(true);
+
+    const { data, error } = await updateTenant({
+        tenantId: selectedTenant.id,
+        payload: {
+            unit_number: unitNumber,
+            tenant_name: tenantName,
+            phone,
+            email,
+            notes
+        }
+    });
+
+    setEditTenantButtonDisabled(false);
+
+    if (error) {
+        showTenantsMessage(error.message || 'Tenant could not be updated.', 'error');
+        return;
+    }
+
+    selectedTenant = data || {
+        ...selectedTenant,
+        unit_number: unitNumber,
+        tenant_name: tenantName,
+        phone,
+        email,
+        notes
+    };
+
+    tenantsCache = tenantsCache.map((tenant) => {
+        if (String(tenant.id) === String(selectedTenant.id)) {
+            return selectedTenant;
+        }
+
+        return tenant;
+    });
+
+    renderTenantDetail(selectedTenant);
+    showTenantsMessage('Tenant updated.', 'success');
+}
+
+/* ================================================================
+   TENANT TEXT / CALL VIEW
+================================================================ */
+
+function renderTenantTextCallView() {
+    if (!selectedTenant) {
+        renderFindTenantView();
+        return;
+    }
+
+    const requestLink = buildTenantRequestLink(selectedTenant);
+
+    tenantsContainer.innerHTML = `
+        <div class="tenants-page">
+            <div class="tenants-card">
+                <h1 class="tenants-title">Text / Call</h1>
+                <p class="tenants-subtitle">
+                    Unit ${escapeHtml(selectedTenant.unit_number || '')} - ${escapeHtml(selectedTenant.tenant_name || 'Tenant')}
+                </p>
+
+                <button id="tenantTextCallBackButton" class="tenants-small-button" style="width:100%; margin-bottom:14px;">
+                    Back To Unit Detail
+                </button>
+
+                <div class="tenants-detail-box">
+                    <div class="tenants-detail-row"><strong>Phone:</strong> ${escapeHtml(selectedTenant.phone || '')}</div>
+                    <div class="tenants-detail-row"><strong>Link:</strong> ${escapeHtml(requestLink)}</div>
+                </div>
+
+                <button id="tenantSendTextButton" class="tenants-main-button">
+                    Text Request Link
+                </button>
+
+                <button id="tenantCallButton" class="tenants-main-button">
+                    Call Tenant
+                </button>
+
+                <div id="tenantsMessage" class="tenants-message"></div>
+            </div>
+
+            <div class="tenants-footer-tag">
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
+            </div>
+        </div>
+    `;
+
+    attachTenantTextCallHandlers();
+}
+
+function attachTenantTextCallHandlers() {
+    const backButton = document.getElementById('tenantTextCallBackButton');
+    const textButton = document.getElementById('tenantSendTextButton');
+    const callButton = document.getElementById('tenantCallButton');
+
+    if (backButton) {
+        backButton.onclick = () => {
+            renderTenantDetail(selectedTenant);
+        };
+    }
+
+    if (textButton) {
+        textButton.onclick = () => {
+            textTenantRequestLink();
+        };
+    }
+
+    if (callButton) {
+        callButton.onclick = () => {
+            callTenantPhone();
         };
     }
 }
@@ -475,7 +686,7 @@ async function renderTenantRequestsView() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
             </div>
         </div>
     `;
@@ -642,7 +853,7 @@ function renderTenantRequestDashboard(request) {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
             </div>
         </div>
     `;
@@ -938,6 +1149,19 @@ function textTenantRequestLink() {
     window.location.href = smsUrl;
 }
 
+function callTenantPhone() {
+    if (!selectedTenant) return;
+
+    const phone = normalizePhoneForSms(selectedTenant.phone || '');
+
+    if (!phone) {
+        showTenantsMessage('Tenant phone number is missing.', 'error');
+        return;
+    }
+
+    window.location.href = `tel:${phone}`;
+}
+
 async function handleTenantStatusToggle() {
     if (!selectedTenant) {
         showTenantsMessage('Tenant not found.', 'error');
@@ -1149,6 +1373,14 @@ function setAddButtonDisabled(isDisabled) {
 
     button.disabled = isDisabled;
     button.textContent = isDisabled ? 'Adding...' : 'Add Tenant';
+}
+
+function setEditTenantButtonDisabled(isDisabled) {
+    const button = document.getElementById('tenantSaveEditButton');
+    if (!button) return;
+
+    button.disabled = isDisabled;
+    button.textContent = isDisabled ? 'Saving...' : 'Save Tenant';
 }
 
 function setRequestSaveButtonDisabled(isDisabled) {
