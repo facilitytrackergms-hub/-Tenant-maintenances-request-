@@ -21,10 +21,10 @@ const routes = {
         renderFunction: 'renderTenantRequestGrid'
     },
 
-    management: {
-       path: '../management/management_grid.js?v=20260705_login_to_facilitys',
-        renderFunction: 'renderManagementGrid'
-    },
+  management: {
+    path: '../management/management_grid.js?v=20260705_login_to_facilitys',
+    renderFunction: 'renderManagementGrid'
+},
 
     facilitys: {
         path: '../facilitys/facilitys_grid.js?v=20260705_facilitys_compact_dashboard_buttons',
