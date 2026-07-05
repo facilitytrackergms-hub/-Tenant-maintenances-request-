@@ -2,7 +2,7 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Tenant Request App Router
    LOCATION: /global_engine/router.js
-   VERSION: v2026_07_05_router_tenant_mode_facility_cache
+   VERSION: v2026_07_05_router_tenants_auto_search_cache
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -32,7 +32,7 @@ const routes = {
     },
 
     tenants: {
-        path: '../tenants/tenants_grid.js?v=20260705_tenants_search_1',
+        path: '../tenants/tenants_grid.js?v=20260705_tenants_auto_search_no_button',
         renderFunction: 'renderTenantsGrid'
     }
 };
@@ -236,7 +236,7 @@ function renderRouterError(container, message) {
                 font-size:11px;
                 color:#64748b;
             ">
-                router.js | v2026_07_05_router_tenant_mode_facility_cache
+                router.js | v2026_07_05_router_tenants_auto_search_cache
             </div>
         </div>
     `;
