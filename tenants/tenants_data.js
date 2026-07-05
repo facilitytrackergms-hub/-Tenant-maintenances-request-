@@ -2,7 +2,7 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Tenants Data Service
    LOCATION: /tenants/tenants_data.js
-   VERSION: v2026_07_05_tenants_data_request_history
+   VERSION: v2026_07_05_tenants_data_edit_request_history
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -64,6 +64,43 @@ export async function createTenant(payload) {
 
     if (error) {
         console.error('Create tenant error:', error);
+    }
+
+    return { data, error };
+}
+
+/* ================================================================
+   UPDATE TENANT
+================================================================ */
+
+export async function updateTenant({ tenantId, payload }) {
+    if (!tenantId) {
+        return {
+            data: null,
+            error: {
+                message: 'Missing tenant ID.'
+            }
+        };
+    }
+
+    const updatePayload = {
+        unit_number: payload.unit_number || '',
+        tenant_name: payload.tenant_name || '',
+        phone: payload.phone || '',
+        email: payload.email || '',
+        notes: payload.notes || '',
+        updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+        .from('tenants')
+        .update(updatePayload)
+        .eq('id', tenantId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Update tenant error:', error);
     }
 
     return { data, error };
