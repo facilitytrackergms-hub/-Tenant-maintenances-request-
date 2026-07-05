@@ -2,7 +2,7 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Tenants Data Service
    LOCATION: /tenants/tenants_data.js
-   VERSION: v2026_07_05_tenants_data_edit_request_history
+   VERSION: v2026_07_05_tenants_data_delete_empty_unit
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -132,6 +132,72 @@ export async function updateTenantStatus({ tenantId, activeStatus }) {
 
     if (error) {
         console.error('Update tenant status error:', error);
+    }
+
+    return { data, error };
+}
+
+/* ================================================================
+   MARK TENANT MOVED OUT / UNIT EMPTY
+================================================================ */
+
+export async function markTenantMovedOut({ tenantId, currentNotes }) {
+    if (!tenantId) {
+        return {
+            data: null,
+            error: {
+                message: 'Missing tenant ID.'
+            }
+        };
+    }
+
+    const timestamp = new Date().toLocaleString();
+    const movedOutNote = `Moved out / unit marked empty on ${timestamp}.`;
+    const updatedNotes = [currentNotes || '', movedOutNote]
+        .filter(Boolean)
+        .join('\n');
+
+    const { data, error } = await supabase
+        .from('tenants')
+        .update({
+            active_status: 'inactive',
+            notes: updatedNotes,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', tenantId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Mark tenant moved out error:', error);
+    }
+
+    return { data, error };
+}
+
+/* ================================================================
+   DELETE TENANT
+================================================================ */
+
+export async function deleteTenant(tenantId) {
+    if (!tenantId) {
+        return {
+            data: null,
+            error: {
+                message: 'Missing tenant ID.'
+            }
+        };
+    }
+
+    const { data, error } = await supabase
+        .from('tenants')
+        .delete()
+        .eq('id', tenantId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Delete tenant error:', error);
     }
 
     return { data, error };
