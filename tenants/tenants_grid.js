@@ -1,8 +1,8 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Tenants Grid - Facility Tenant Manager
+   PURPOSE: Tenants Grid - Add Tenant, Find Unit, Tenant Detail
    LOCATION: /tenants/tenants_grid.js
-   VERSION: v2026_07_05_tenants_grid_first_build
+   VERSION: v2026_07_05_tenants_grid_one_view_search
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -17,7 +17,7 @@ import {
     fetchCurrentManagerProfile
 } from '../management/management_auth.js';
 
-import { injectTenantsStyles } from './tenants_styles.js';
+import { injectTenantsStyles } from './tenants_styles.js?v=20260705_tenants_search_1';
 
 /* ================================================================
    STATE
@@ -29,6 +29,7 @@ let currentManager = null;
 let currentFacility = null;
 let currentFacilityId = null;
 let selectedTenant = null;
+let currentTenantMode = 'find';
 
 /* ================================================================
    MAIN RENDER
@@ -65,14 +66,23 @@ export async function renderTenantsGrid(containerOrContext = {}) {
         containerOrContext?.facility?.id ||
         getFacilityIdFromUrl();
 
+    currentTenantMode =
+        containerOrContext?.tenantMode ||
+        getTenantModeFromUrl() ||
+        'find';
+
     if (!currentFacilityId) {
         renderMissingFacility();
         return;
     }
 
-    renderTenantsHome();
+    if (currentTenantMode === 'add') {
+        renderAddTenantView();
+        return;
+    }
 
-    await loadTenants();
+    renderFindTenantView();
+    await loadTenantsForSearch();
 }
 
 /* ================================================================
@@ -92,7 +102,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_first_build
+                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
             </div>
         </div>
     `;
@@ -125,7 +135,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_first_build
+                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
             </div>
         </div>
     `;
@@ -158,7 +168,7 @@ function renderMissingFacility() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_first_build
+                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
             </div>
         </div>
     `;
@@ -173,25 +183,23 @@ function renderMissingFacility() {
 }
 
 /* ================================================================
-   TENANTS HOME
+   ADD TENANT VIEW
 ================================================================ */
 
-function renderTenantsHome() {
+function renderAddTenantView() {
     selectedTenant = null;
 
     tenantsContainer.innerHTML = `
         <div class="tenants-page">
             <div class="tenants-card">
-                <h1 class="tenants-title">Tenants</h1>
+                <h1 class="tenants-title">Add Tenant</h1>
                 <p class="tenants-subtitle">
                     ${escapeHtml(getFacilityTitle())}
                 </p>
 
-                <button id="tenantsBackButton" class="tenants-small-button">
+                <button id="tenantsBackButton" class="tenants-small-button" style="width:100%; margin-bottom:14px;">
                     Back To Facilitys
                 </button>
-
-                <div class="tenants-section-title">Add Tenant</div>
 
                 <input id="tenantUnitInput" class="tenants-input" placeholder="Unit number">
                 <input id="tenantNameInput" class="tenants-input" placeholder="Tenant name">
@@ -203,28 +211,137 @@ function renderTenantsHome() {
                     Add Tenant
                 </button>
 
+                <button id="tenantGoToFindButton" class="tenants-small-button" style="width:100%; margin-top:14px;">
+                    Find Tenant / Unit
+                </button>
+
                 <div id="tenantsMessage" class="tenants-message"></div>
             </div>
 
-            <div class="tenants-card">
-                <div class="tenants-section-title">Tenant Units</div>
-
-                <div id="tenantsList" class="tenants-list">
-                    Loading tenants...
-                </div>
-            </div>
-
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_first_build
+                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
             </div>
         </div>
     `;
 
-    attachTenantsHomeHandlers();
+    attachAddTenantHandlers();
+}
+
+function attachAddTenantHandlers() {
+    const backButton = document.getElementById('tenantsBackButton');
+    const addButton = document.getElementById('tenantAddButton');
+    const findButton = document.getElementById('tenantGoToFindButton');
+
+    if (backButton) {
+        backButton.onclick = () => {
+            goToView('facilitys');
+        };
+    }
+
+    if (addButton) {
+        addButton.onclick = async () => {
+            await handleAddTenant();
+        };
+    }
+
+    if (findButton) {
+        findButton.onclick = async () => {
+            currentTenantMode = 'find';
+            renderFindTenantView();
+            await loadTenantsForSearch();
+        };
+    }
 }
 
 /* ================================================================
-   TENANT DETAIL
+   FIND TENANT VIEW
+================================================================ */
+
+function renderFindTenantView() {
+    selectedTenant = null;
+
+    tenantsContainer.innerHTML = `
+        <div class="tenants-page">
+            <div class="tenants-card">
+                <h1 class="tenants-title">Find Tenant / Unit</h1>
+                <p class="tenants-subtitle">
+                    ${escapeHtml(getFacilityTitle())}
+                </p>
+
+                <button id="tenantsBackButton" class="tenants-small-button" style="width:100%; margin-bottom:14px;">
+                    Back To Facilitys
+                </button>
+
+                <input id="tenantSearchInput" class="tenants-input" placeholder="Search unit number">
+
+                <button id="tenantSearchButton" class="tenants-main-button">
+                    Search Unit
+                </button>
+
+                <button id="tenantGoToAddButton" class="tenants-small-button" style="width:100%; margin-top:14px;">
+                    Add New Tenant
+                </button>
+
+                <div id="tenantsMessage" class="tenants-message"></div>
+            </div>
+
+            <div class="tenants-card">
+                <div class="tenants-section-title">Search Results</div>
+
+                <div id="tenantsList" class="tenants-list">
+                    Type a unit number to search.
+                </div>
+            </div>
+
+            <div class="tenants-footer-tag">
+                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
+            </div>
+        </div>
+    `;
+
+    attachFindTenantHandlers();
+}
+
+function attachFindTenantHandlers() {
+    const backButton = document.getElementById('tenantsBackButton');
+    const searchInput = document.getElementById('tenantSearchInput');
+    const searchButton = document.getElementById('tenantSearchButton');
+    const addButton = document.getElementById('tenantGoToAddButton');
+
+    if (backButton) {
+        backButton.onclick = () => {
+            goToView('facilitys');
+        };
+    }
+
+    if (searchInput) {
+        searchInput.oninput = () => {
+            renderSearchResults(searchInput.value);
+        };
+
+        searchInput.onkeydown = (event) => {
+            if (event.key === 'Enter') {
+                renderSearchResults(searchInput.value);
+            }
+        };
+    }
+
+    if (searchButton) {
+        searchButton.onclick = () => {
+            renderSearchResults(getInputValue('tenantSearchInput'));
+        };
+    }
+
+    if (addButton) {
+        addButton.onclick = () => {
+            currentTenantMode = 'add';
+            renderAddTenantView();
+        };
+    }
+}
+
+/* ================================================================
+   TENANT DETAIL VIEW
 ================================================================ */
 
 function renderTenantDetail(tenant) {
@@ -244,8 +361,8 @@ function renderTenantDetail(tenant) {
                     ${escapeHtml(tenant.tenant_name || 'Tenant')}
                 </p>
 
-                <button id="tenantDetailBackButton" class="tenants-small-button">
-                    Back To Tenant Units
+                <button id="tenantDetailBackButton" class="tenants-small-button" style="width:100%; margin-bottom:14px;">
+                    Back To Find Tenant / Unit
                 </button>
 
                 <div class="tenants-detail-box">
@@ -281,33 +398,12 @@ function renderTenantDetail(tenant) {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_first_build
+                tenants_grid.js | v2026_07_05_tenants_grid_one_view_search
             </div>
         </div>
     `;
 
     attachTenantDetailHandlers();
-}
-
-/* ================================================================
-   HANDLERS
-================================================================ */
-
-function attachTenantsHomeHandlers() {
-    const backButton = document.getElementById('tenantsBackButton');
-    const addButton = document.getElementById('tenantAddButton');
-
-    if (backButton) {
-        backButton.onclick = () => {
-            goToView('facilitys');
-        };
-    }
-
-    if (addButton) {
-        addButton.onclick = async () => {
-            await handleAddTenant();
-        };
-    }
 }
 
 function attachTenantDetailHandlers() {
@@ -319,8 +415,8 @@ function attachTenantDetailHandlers() {
 
     if (backButton) {
         backButton.onclick = async () => {
-            renderTenantsHome();
-            await loadTenants();
+            renderFindTenantView();
+            await loadTenantsForSearch();
         };
     }
 
@@ -398,24 +494,16 @@ async function handleAddTenant() {
     clearTenantForm();
 
     showTenantsMessage('Tenant added.', 'success');
-
-    await loadTenants();
 }
 
 /* ================================================================
-   LOAD TENANTS
+   LOAD TENANTS FOR SEARCH
 ================================================================ */
 
-async function loadTenants() {
+async function loadTenantsForSearch() {
     const list = document.getElementById('tenantsList');
 
     if (!list) return;
-
-    list.innerHTML = `
-        <div class="tenants-loading">
-            Loading tenants...
-        </div>
-    `;
 
     const { data, error } = await fetchTenantsByFacilityId(currentFacilityId);
 
@@ -430,28 +518,53 @@ async function loadTenants() {
 
     tenantsCache = sortTenantsByUnitNumber(Array.isArray(data) ? data : []);
 
-    renderTenantsList();
+    list.innerHTML = `
+        <div class="tenants-empty">
+            Type a unit number to search.
+        </div>
+    `;
 }
 
 /* ================================================================
-   RENDER TENANTS LIST
+   SEARCH RESULTS
 ================================================================ */
 
-function renderTenantsList() {
+function renderSearchResults(searchValue) {
     const list = document.getElementById('tenantsList');
 
     if (!list) return;
 
-    if (!tenantsCache.length) {
+    const query = String(searchValue || '').trim().toLowerCase();
+
+    if (!query) {
         list.innerHTML = `
             <div class="tenants-empty">
-                No tenants yet.
+                Type a unit number to search.
             </div>
         `;
         return;
     }
 
-    list.innerHTML = tenantsCache.map((tenant) => {
+    const matches = tenantsCache.filter((tenant) => {
+        const unitNumber = String(tenant.unit_number || '').toLowerCase();
+        const tenantName = String(tenant.tenant_name || '').toLowerCase();
+
+        return (
+            unitNumber.includes(query) ||
+            tenantName.includes(query)
+        );
+    });
+
+    if (!matches.length) {
+        list.innerHTML = `
+            <div class="tenants-empty">
+                No tenant found for ${escapeHtml(searchValue)}.
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = matches.map((tenant) => {
         return `
             <button class="tenants-unit-button" data-open-tenant="${escapeHtml(tenant.id)}">
                 <div class="tenants-unit-number">
@@ -603,6 +716,11 @@ function getFacilityIdFromUrl() {
     return urlParams.get('facility_id') || '';
 }
 
+function getTenantModeFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('tenant_mode') || '';
+}
+
 function getFacilityTitle() {
     if (!currentFacility) {
         return `Facility ID: ${currentFacilityId}`;
@@ -640,6 +758,7 @@ function buildTenantRequestLink(tenant) {
     const url = new URL(window.location.href);
     url.searchParams.delete('view');
     url.searchParams.delete('facility_id');
+    url.searchParams.delete('tenant_mode');
     url.searchParams.delete('tenant_code');
     url.searchParams.delete('request_code');
     url.searchParams.set('tenant', requestCode);
