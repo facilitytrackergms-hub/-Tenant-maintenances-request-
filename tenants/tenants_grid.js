@@ -1,15 +1,17 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Tenants Grid - Add Tenant, Auto Find Unit, Tenant Detail
+   PURPOSE: Tenants Grid - Add Tenant, Auto Find Unit, Tenant Detail, Request History
    LOCATION: /tenants/tenants_grid.js
-   VERSION: v2026_07_05_tenants_grid_auto_detail_after_add
+   VERSION: v2026_07_05_tenants_grid_request_history_dashboard
    UPDATED: 2026-07-05
 ================================================================ */
 
 import {
     fetchTenantsByFacilityId,
     createTenant,
-    updateTenantStatus
+    updateTenantStatus,
+    fetchTenantMaintenanceRequestsByTenantId,
+    updateTenantMaintenanceRequest
 } from './tenants_data.js';
 
 import {
@@ -17,7 +19,7 @@ import {
     fetchCurrentManagerProfile
 } from '../management/management_auth.js';
 
-import { injectTenantsStyles } from './tenants_styles.js?v=20260705_tenants_auto_detail_after_add_1';
+import { injectTenantsStyles } from './tenants_styles.js?v=20260705_tenants_request_history_dashboard_1';
 
 /* ================================================================
    STATE
@@ -25,10 +27,12 @@ import { injectTenantsStyles } from './tenants_styles.js?v=20260705_tenants_auto
 
 let tenantsContainer = null;
 let tenantsCache = [];
+let tenantRequestsCache = [];
 let currentManager = null;
 let currentFacility = null;
 let currentFacilityId = null;
 let selectedTenant = null;
+let selectedTenantRequest = null;
 let currentTenantMode = 'find';
 
 /* ================================================================
@@ -102,7 +106,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
+                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
             </div>
         </div>
     `;
@@ -135,7 +139,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
+                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
             </div>
         </div>
     `;
@@ -168,7 +172,7 @@ function renderMissingFacility() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
+                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
             </div>
         </div>
     `;
@@ -188,6 +192,7 @@ function renderMissingFacility() {
 
 function renderAddTenantView() {
     selectedTenant = null;
+    selectedTenantRequest = null;
 
     tenantsContainer.innerHTML = `
         <div class="tenants-page">
@@ -219,7 +224,7 @@ function renderAddTenantView() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
+                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
             </div>
         </div>
     `;
@@ -259,6 +264,7 @@ function attachAddTenantHandlers() {
 
 function renderFindTenantView() {
     selectedTenant = null;
+    selectedTenantRequest = null;
 
     tenantsContainer.innerHTML = `
         <div class="tenants-page">
@@ -290,7 +296,7 @@ function renderFindTenantView() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
+                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
             </div>
         </div>
     `;
@@ -329,6 +335,7 @@ function attachFindTenantHandlers() {
 
 function renderTenantDetail(tenant) {
     selectedTenant = tenant;
+    selectedTenantRequest = null;
 
     const requestLink = buildTenantRequestLink(tenant);
     const isActive = tenant.active_status === 'active';
@@ -364,8 +371,8 @@ function renderTenantDetail(tenant) {
                         Copy Link
                     </button>
 
-                    <button id="tenantOpenLinkButton" class="tenants-small-button">
-                        Open
+                    <button id="tenantRequestsButton" class="tenants-small-button">
+                        Requests
                     </button>
 
                     <button id="tenantTextLinkButton" class="tenants-small-button">
@@ -381,7 +388,7 @@ function renderTenantDetail(tenant) {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
+                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
             </div>
         </div>
     `;
@@ -392,7 +399,7 @@ function renderTenantDetail(tenant) {
 function attachTenantDetailHandlers() {
     const backButton = document.getElementById('tenantDetailBackButton');
     const copyLinkButton = document.getElementById('tenantCopyLinkButton');
-    const openLinkButton = document.getElementById('tenantOpenLinkButton');
+    const requestsButton = document.getElementById('tenantRequestsButton');
     const textLinkButton = document.getElementById('tenantTextLinkButton');
     const statusButton = document.getElementById('tenantStatusButton');
 
@@ -409,9 +416,9 @@ function attachTenantDetailHandlers() {
         };
     }
 
-    if (openLinkButton) {
-        openLinkButton.onclick = () => {
-            openTenantRequestLink();
+    if (requestsButton) {
+        requestsButton.onclick = async () => {
+            await renderTenantRequestsView();
         };
     }
 
@@ -426,6 +433,299 @@ function attachTenantDetailHandlers() {
             await handleTenantStatusToggle();
         };
     }
+}
+
+/* ================================================================
+   TENANT REQUEST HISTORY VIEW
+================================================================ */
+
+async function renderTenantRequestsView() {
+    if (!selectedTenant) {
+        renderFindTenantView();
+        await loadTenantsForSearch();
+        return;
+    }
+
+    selectedTenantRequest = null;
+
+    tenantsContainer.innerHTML = `
+        <div class="tenants-page">
+            <div class="tenants-card">
+                <h1 class="tenants-title">
+                    Unit ${escapeHtml(selectedTenant.unit_number || '')} Requests
+                </h1>
+
+                <p class="tenants-subtitle">
+                    ${escapeHtml(selectedTenant.tenant_name || 'Tenant')}
+                </p>
+
+                <button id="tenantRequestsBackButton" class="tenants-small-button" style="width:100%; margin-bottom:14px;">
+                    Back To Unit Detail
+                </button>
+
+                <div id="tenantsMessage" class="tenants-message"></div>
+            </div>
+
+            <div class="tenants-card">
+                <div class="tenants-section-title">Maintenance Request History</div>
+
+                <div id="tenantRequestsList" class="tenants-list">
+                    Loading requests...
+                </div>
+            </div>
+
+            <div class="tenants-footer-tag">
+                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
+            </div>
+        </div>
+    `;
+
+    const backButton = document.getElementById('tenantRequestsBackButton');
+
+    if (backButton) {
+        backButton.onclick = () => {
+            renderTenantDetail(selectedTenant);
+        };
+    }
+
+    await loadTenantRequests();
+}
+
+async function loadTenantRequests() {
+    const list = document.getElementById('tenantRequestsList');
+
+    if (!list || !selectedTenant) return;
+
+    list.innerHTML = `
+        <div class="tenants-empty">
+            Loading requests...
+        </div>
+    `;
+
+    const { data, error } = await fetchTenantMaintenanceRequestsByTenantId(selectedTenant.id);
+
+    if (error) {
+        list.innerHTML = `
+            <div class="tenants-error-box">
+                Could not load maintenance requests.
+            </div>
+        `;
+        return;
+    }
+
+    tenantRequestsCache = Array.isArray(data) ? data : [];
+
+    if (!tenantRequestsCache.length) {
+        list.innerHTML = `
+            <div class="tenants-empty">
+                No maintenance requests for this unit yet.
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = tenantRequestsCache.map((request) => {
+        return `
+            <button class="tenants-unit-button" data-open-request="${escapeHtml(request.id)}" style="text-align:left;">
+                <div class="tenants-unit-number">
+                    ${escapeHtml(formatRequestDate(request.created_at))}
+                </div>
+
+                <div class="tenants-unit-name" style="font-weight:800;">
+                    ${escapeHtml(request.request_title || 'Maintenance request')}
+                </div>
+
+                <div style="font-size:13px; margin-top:6px; color:#0f172a;">
+                    <strong>Status:</strong> ${escapeHtml(request.request_status || 'open')}
+                </div>
+
+                <div style="font-size:13px; margin-top:4px; color:#0f172a;">
+                    <strong>Assigned:</strong> ${escapeHtml(request.assigned_to_text || 'Not assigned')}
+                </div>
+
+                <div style="font-size:13px; margin-top:4px; color:#0f172a;">
+                    <strong>Next:</strong> ${escapeHtml(request.next_step_text || request.handled_status || 'new')}
+                </div>
+            </button>
+        `;
+    }).join('');
+
+    attachTenantRequestCardHandlers();
+}
+
+function attachTenantRequestCardHandlers() {
+    document.querySelectorAll('[data-open-request]').forEach((button) => {
+        button.onclick = () => {
+            const requestId = button.getAttribute('data-open-request');
+            const request = findTenantRequestById(requestId);
+
+            if (!request) {
+                showTenantsMessage('Request not found.', 'error');
+                return;
+            }
+
+            renderTenantRequestDashboard(request);
+        };
+    });
+}
+
+/* ================================================================
+   TENANT REQUEST DASHBOARD
+================================================================ */
+
+function renderTenantRequestDashboard(request) {
+    selectedTenantRequest = request;
+
+    tenantsContainer.innerHTML = `
+        <div class="tenants-page">
+            <div class="tenants-card">
+                <h1 class="tenants-title">
+                    Request Dashboard
+                </h1>
+
+                <p class="tenants-subtitle">
+                    Unit ${escapeHtml(request.unit_number || selectedTenant?.unit_number || '')}
+                </p>
+
+                <button id="requestDashboardBackButton" class="tenants-small-button" style="width:100%; margin-bottom:14px;">
+                    Back To Requests
+                </button>
+
+                <div class="tenants-detail-box">
+                    <div class="tenants-detail-row"><strong>Date:</strong> ${escapeHtml(formatRequestDate(request.created_at))}</div>
+                    <div class="tenants-detail-row"><strong>Title:</strong> ${escapeHtml(request.request_title || '')}</div>
+                    <div class="tenants-detail-row"><strong>Status:</strong> ${escapeHtml(request.request_status || 'open')}</div>
+                    <div class="tenants-detail-row"><strong>Best Day:</strong> ${escapeHtml(request.best_day || '')}</div>
+                    <div class="tenants-detail-row"><strong>Best Time:</strong> ${escapeHtml(request.best_time || '')}</div>
+                    <div class="tenants-detail-row"><strong>Permission:</strong> ${escapeHtml(request.permission_to_enter || '')}</div>
+                    <div class="tenants-detail-row"><strong>Entry Notes:</strong> ${escapeHtml(request.entry_instructions || '')}</div>
+                    <div class="tenants-detail-row"><strong>Problem:</strong> ${escapeHtml(request.request_description || '')}</div>
+                </div>
+
+                <label class="tenants-section-title" style="display:block; margin-top:14px;">Request Status</label>
+                <select id="requestStatusInput" class="tenants-input">
+                    <option value="open">open</option>
+                    <option value="assigned">assigned</option>
+                    <option value="in_progress">in progress</option>
+                    <option value="waiting">waiting</option>
+                    <option value="completed">completed</option>
+                </select>
+
+                <label class="tenants-section-title" style="display:block; margin-top:10px;">Assigned To</label>
+                <input id="requestAssignedToInput" class="tenants-input" placeholder="Assigned to" value="${escapeHtml(request.assigned_to_text || '')}">
+
+                <label class="tenants-section-title" style="display:block; margin-top:10px;">Handled Status</label>
+                <select id="requestHandledStatusInput" class="tenants-input">
+                    <option value="new">new</option>
+                    <option value="reviewed">reviewed</option>
+                    <option value="scheduled">scheduled</option>
+                    <option value="parts_needed">parts needed</option>
+                    <option value="vendor_needed">vendor needed</option>
+                    <option value="follow_up_needed">follow up needed</option>
+                    <option value="done">done</option>
+                </select>
+
+                <label class="tenants-section-title" style="display:block; margin-top:10px;">Next Step</label>
+                <textarea id="requestNextStepInput" class="tenants-textarea" placeholder="Next step">${escapeHtml(request.next_step_text || '')}</textarea>
+
+                <label class="tenants-section-title" style="display:block; margin-top:10px;">Follow-Up Notes</label>
+                <textarea id="requestFollowUpNotesInput" class="tenants-textarea" placeholder="Follow-up notes">${escapeHtml(request.follow_up_notes || '')}</textarea>
+
+                <label class="tenants-section-title" style="display:block; margin-top:10px;">Manager Notes</label>
+                <textarea id="requestManagerNotesInput" class="tenants-textarea" placeholder="Manager notes">${escapeHtml(request.manager_notes || '')}</textarea>
+
+                <button id="requestSaveButton" class="tenants-main-button">
+                    Save Request
+                </button>
+
+                <div id="tenantsMessage" class="tenants-message"></div>
+            </div>
+
+            <div class="tenants-footer-tag">
+                tenants_grid.js | v2026_07_05_tenants_grid_request_history_dashboard
+            </div>
+        </div>
+    `;
+
+    setInputValue('requestStatusInput', request.request_status || 'open');
+    setInputValue('requestHandledStatusInput', request.handled_status || 'new');
+
+    attachTenantRequestDashboardHandlers();
+}
+
+function attachTenantRequestDashboardHandlers() {
+    const backButton = document.getElementById('requestDashboardBackButton');
+    const saveButton = document.getElementById('requestSaveButton');
+
+    if (backButton) {
+        backButton.onclick = async () => {
+            await renderTenantRequestsView();
+        };
+    }
+
+    if (saveButton) {
+        saveButton.onclick = async () => {
+            await handleSaveTenantRequest();
+        };
+    }
+}
+
+async function handleSaveTenantRequest() {
+    clearTenantsMessage();
+
+    if (!selectedTenantRequest) {
+        showTenantsMessage('Request not found.', 'error');
+        return;
+    }
+
+    const requestStatus = getInputValue('requestStatusInput') || 'open';
+    const assignedToText = getInputValue('requestAssignedToInput');
+    const handledStatus = getInputValue('requestHandledStatusInput') || 'new';
+    const nextStepText = getInputValue('requestNextStepInput');
+    const followUpNotes = getInputValue('requestFollowUpNotesInput');
+    const managerNotes = getInputValue('requestManagerNotesInput');
+
+    setRequestSaveButtonDisabled(true);
+
+    const { data, error } = await updateTenantMaintenanceRequest({
+        requestId: selectedTenantRequest.id,
+        requestStatus,
+        assignedToText,
+        handledStatus,
+        nextStepText,
+        followUpNotes,
+        managerNotes,
+        managerId: currentManager?.id || null
+    });
+
+    setRequestSaveButtonDisabled(false);
+
+    if (error) {
+        showTenantsMessage(error.message || 'Request could not be saved.', 'error');
+        return;
+    }
+
+    selectedTenantRequest = data || {
+        ...selectedTenantRequest,
+        request_status: requestStatus,
+        assigned_to_text: assignedToText,
+        handled_status: handledStatus,
+        next_step_text: nextStepText,
+        follow_up_notes: followUpNotes,
+        manager_notes: managerNotes,
+        updated_at: new Date().toISOString()
+    };
+
+    tenantRequestsCache = tenantRequestsCache.map((request) => {
+        if (String(request.id) === String(selectedTenantRequest.id)) {
+            return selectedTenantRequest;
+        }
+
+        return request;
+    });
+
+    renderTenantRequestDashboard(selectedTenantRequest);
+    showTenantsMessage('Request saved.', 'success');
 }
 
 /* ================================================================
@@ -621,12 +921,6 @@ async function copyTenantRequestLink() {
     }
 }
 
-function openTenantRequestLink() {
-    if (!selectedTenant) return;
-
-    window.open(buildTenantRequestLink(selectedTenant), '_blank');
-}
-
 function textTenantRequestLink() {
     if (!selectedTenant) return;
 
@@ -737,6 +1031,10 @@ function findTenantById(tenantId) {
     return tenantsCache.find((tenant) => String(tenant.id) === String(tenantId));
 }
 
+function findTenantRequestById(requestId) {
+    return tenantRequestsCache.find((request) => String(request.id) === String(requestId));
+}
+
 function normalizeCreatedTenantData(data) {
     if (Array.isArray(data)) {
         return data[0] || null;
@@ -791,6 +1089,18 @@ function buildTenantRequestLink(tenant) {
     return url.toString();
 }
 
+function formatRequestDate(value) {
+    if (!value) return 'No date';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+
+    return date.toLocaleString();
+}
+
 function normalizePhoneForSms(phone) {
     return String(phone || '')
         .replace(/[^\d+]/g, '')
@@ -839,6 +1149,14 @@ function setAddButtonDisabled(isDisabled) {
 
     button.disabled = isDisabled;
     button.textContent = isDisabled ? 'Adding...' : 'Add Tenant';
+}
+
+function setRequestSaveButtonDisabled(isDisabled) {
+    const button = document.getElementById('requestSaveButton');
+    if (!button) return;
+
+    button.disabled = isDisabled;
+    button.textContent = isDisabled ? 'Saving...' : 'Save Request';
 }
 
 function escapeHtml(value) {
