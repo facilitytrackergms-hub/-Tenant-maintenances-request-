@@ -22,7 +22,7 @@ const routes = {
     },
 
   management: {
-    path: '../management/management_grid.js?v=20260705_login_to_facilitys',
+   path: '../management/management_grid.js?v=20260705_login_to_facilitys_2',
     renderFunction: 'renderManagementGrid'
 },
 
