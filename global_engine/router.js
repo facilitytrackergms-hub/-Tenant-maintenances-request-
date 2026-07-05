@@ -2,8 +2,8 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Tenant Request App Router
    LOCATION: /global_engine/router.js
-   VERSION: v2026_07_04_manager_home_dashboard_cache_bust_2
-   UPDATED: 2026-07-04
+   VERSION: v2026_07_05_tenants_route_added
+   UPDATED: 2026-07-05
 ================================================================ */
 
 /* ================================================================
@@ -12,7 +12,7 @@
 
 const routes = {
     manager_home_dashboard: {
-        path: '../manager_home_dashboard/manager_home_dashboard_grid.js?v=20260704_manager_home_2',
+        path: '../manager_home_dashboard/manager_home_dashboard_grid.js?v=20260705_manager_home_facilitys_only',
         renderFunction: 'renderManagerHomeDashboardGrid'
     },
 
@@ -27,8 +27,13 @@ const routes = {
     },
 
     facilitys: {
-        path: '../facilitys/facilitys_grid.js',
+        path: '../facilitys/facilitys_grid.js?v=20260705_facility_dashboard_no_delete',
         renderFunction: 'renderFacilitysGrid'
+    },
+
+    tenants: {
+        path: '../tenants/tenants_grid.js?v=20260705_tenants_1',
+        renderFunction: 'renderTenantsGrid'
     }
 };
 
@@ -75,6 +80,10 @@ export async function navigateTo(viewName, context = {}) {
 
     const url = new URL(window.location.href);
     url.searchParams.set('view', safeViewName);
+
+    if (context?.facilityId) {
+        url.searchParams.set('facility_id', context.facilityId);
+    }
 
     window.history.pushState(
         {
@@ -212,7 +221,7 @@ function renderRouterError(container, message) {
                 font-size:11px;
                 color:#64748b;
             ">
-                router.js | v2026_07_04_manager_home_dashboard_cache_bust_2
+                router.js | v2026_07_05_tenants_route_added
             </div>
         </div>
     `;
