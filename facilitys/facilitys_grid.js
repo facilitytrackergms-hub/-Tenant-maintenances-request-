@@ -1,14 +1,16 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Facilitys Screen - Menu, Add Facility, Current Facilitys, Facility Dashboard
+   PURPOSE: Facilitys Screen - One View Facility Flow
    LOCATION: /facilitys/facilitys_grid.js
-   VERSION: v2026_07_05_facilitys_menu_split_views
+   VERSION: v2026_07_05_facilitys_one_view_edit_delete
    UPDATED: 2026-07-05
 ================================================================ */
 
 import {
     fetchFacilitys,
-    createFacility
+    createFacility,
+    updateFacility,
+    deleteFacility
 } from './facilitys_data.js';
 
 import {
@@ -16,7 +18,7 @@ import {
     fetchCurrentManagerProfile
 } from '../management/management_auth.js';
 
-import { injectFacilitysStyles } from './facilitys_styles.js?v=20260705_button_spacing_2';
+import { injectFacilitysStyles } from './facilitys_styles.js?v=20260705_button_spacing_4';
 
 /* ================================================================
    STATE
@@ -79,7 +81,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
+                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
             </div>
         </div>
     `;
@@ -112,7 +114,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
+                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
             </div>
         </div>
     `;
@@ -145,7 +147,7 @@ function renderFacilitysMenu() {
                     Back To Manager Dashboard
                 </button>
 
-                <button id="facilitysAddNewButton" class="facilitys-main-button">
+                <button id="facilitysAddNewButton" class="facilitys-main-button" style="margin-bottom:14px;">
                     Add New Facility
                 </button>
 
@@ -157,7 +159,7 @@ function renderFacilitysMenu() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
+                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
             </div>
         </div>
     `;
@@ -223,7 +225,7 @@ function renderAddFacilityView() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
+                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
             </div>
         </div>
     `;
@@ -275,7 +277,7 @@ function renderCurrentFacilitysView() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
+                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
             </div>
         </div>
     `;
@@ -314,15 +316,27 @@ function renderFacilityDashboard(facility) {
 
                 <div class="facilitys-section-title">Facility Dashboard</div>
 
-                <button id="facilityAddTenantButton" class="facilitys-main-button">
+                <button id="facilityAddTenantButton" class="facilitys-main-button" style="margin-bottom:14px;">
                     Add New Tenant
+                </button>
+
+                <button id="facilityFindTenantButton" class="facilitys-main-button" style="margin-bottom:14px;">
+                    Find Tenant / Unit
+                </button>
+
+                <button id="facilityEditButton" class="facilitys-main-button" style="margin-bottom:14px;">
+                    Edit Facility
+                </button>
+
+                <button id="facilityDeleteButton" class="facilitys-warning-button" style="width:100%;">
+                    Delete Facility
                 </button>
 
                 <div id="facilitysMessage" class="facilitys-message"></div>
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
+                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
             </div>
         </div>
     `;
@@ -333,6 +347,9 @@ function renderFacilityDashboard(facility) {
 function attachFacilityDashboardHandlers() {
     const backButton = document.getElementById('facilityDashboardBackButton');
     const addTenantButton = document.getElementById('facilityAddTenantButton');
+    const findTenantButton = document.getElementById('facilityFindTenantButton');
+    const editButton = document.getElementById('facilityEditButton');
+    const deleteButton = document.getElementById('facilityDeleteButton');
 
     if (backButton) {
         backButton.onclick = async () => {
@@ -343,12 +360,168 @@ function attachFacilityDashboardHandlers() {
 
     if (addTenantButton) {
         addTenantButton.onclick = () => {
-            openTenantsViewForFacility();
+            openTenantsViewForFacility('add');
+        };
+    }
+
+    if (findTenantButton) {
+        findTenantButton.onclick = () => {
+            openTenantsViewForFacility('find');
+        };
+    }
+
+    if (editButton) {
+        editButton.onclick = () => {
+            renderEditFacilityView();
+        };
+    }
+
+    if (deleteButton) {
+        deleteButton.onclick = () => {
+            renderDeleteFacilityWarningView();
         };
     }
 }
 
-function openTenantsViewForFacility() {
+/* ================================================================
+   EDIT FACILITY VIEW
+================================================================ */
+
+function renderEditFacilityView() {
+    if (!selectedFacility) {
+        renderFacilitysMenu();
+        return;
+    }
+
+    facilitysContainer.innerHTML = `
+        <div class="facilitys-page">
+            <div class="facilitys-card">
+                <h1 class="facilitys-title">Edit Facility</h1>
+                <p class="facilitys-subtitle">
+                    ${escapeHtml(selectedFacility.facility_name || 'Facility')}
+                </p>
+
+                <button id="facilityEditBackButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
+                    Back To Facility Dashboard
+                </button>
+
+                <input id="facilityEditNameInput" class="facilitys-input" placeholder="Facility name" value="${escapeHtml(selectedFacility.facility_name || '')}">
+                <input id="facilityEditStreetAddressInput" class="facilitys-input" placeholder="Street address" value="${escapeHtml(selectedFacility.street_address || '')}">
+                <input id="facilityEditCityInput" class="facilitys-input" placeholder="City" value="${escapeHtml(selectedFacility.city || '')}">
+                <input id="facilityEditStateInput" class="facilitys-input" placeholder="State" value="${escapeHtml(selectedFacility.state || '')}">
+                <input id="facilityEditZipInput" class="facilitys-input" placeholder="Zip" value="${escapeHtml(selectedFacility.zip || '')}">
+                <input id="facilityEditPhoneInput" class="facilitys-input" placeholder="Phone" value="${escapeHtml(selectedFacility.phone || '')}">
+                <textarea id="facilityEditNotesInput" class="facilitys-textarea" placeholder="Notes">${escapeHtml(selectedFacility.notes || '')}</textarea>
+
+                <button id="facilitySaveEditButton" class="facilitys-main-button">
+                    Save Facility
+                </button>
+
+                <div id="facilitysMessage" class="facilitys-message"></div>
+            </div>
+
+            <div class="facilitys-footer-tag">
+                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
+            </div>
+        </div>
+    `;
+
+    attachEditFacilityHandlers();
+}
+
+function attachEditFacilityHandlers() {
+    const backButton = document.getElementById('facilityEditBackButton');
+    const saveButton = document.getElementById('facilitySaveEditButton');
+
+    if (backButton) {
+        backButton.onclick = () => {
+            renderFacilityDashboard(selectedFacility);
+        };
+    }
+
+    if (saveButton) {
+        saveButton.onclick = async () => {
+            await handleUpdateFacility();
+        };
+    }
+}
+
+/* ================================================================
+   DELETE FACILITY WARNING VIEW
+================================================================ */
+
+function renderDeleteFacilityWarningView() {
+    if (!selectedFacility) {
+        renderFacilitysMenu();
+        return;
+    }
+
+    facilitysContainer.innerHTML = `
+        <div class="facilitys-page">
+            <div class="facilitys-card">
+                <h1 class="facilitys-title">Delete Facility</h1>
+                <p class="facilitys-subtitle">
+                    You are about to delete this facility.
+                </p>
+
+                <div class="facilitys-item-card" style="margin-bottom:14px;">
+                    <div class="facilitys-item-name">
+                        ${escapeHtml(selectedFacility.facility_name || 'Facility')}
+                    </div>
+                    <div class="facilitys-item-address">
+                        ${escapeHtml(selectedFacility.street_address || '')}<br>
+                        ${escapeHtml(buildCityStateZip(selectedFacility))}
+                    </div>
+                </div>
+
+                <button id="facilityDeleteBackButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
+                    Cancel - Back To Facility Dashboard
+                </button>
+
+                <button id="facilityConfirmDeleteButton" class="facilitys-warning-button" style="width:100%;">
+                    I Understand - Delete Facility
+                </button>
+
+                <div id="facilitysMessage" class="facilitys-message"></div>
+            </div>
+
+            <div class="facilitys-footer-tag">
+                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
+            </div>
+        </div>
+    `;
+
+    attachDeleteFacilityHandlers();
+}
+
+function attachDeleteFacilityHandlers() {
+    const backButton = document.getElementById('facilityDeleteBackButton');
+    const confirmButton = document.getElementById('facilityConfirmDeleteButton');
+
+    if (backButton) {
+        backButton.onclick = () => {
+            renderFacilityDashboard(selectedFacility);
+        };
+    }
+
+    if (confirmButton) {
+        confirmButton.onclick = async () => {
+            const confirmed = window.confirm(
+                'You are about to delete this facility. This cannot be undone. Continue?'
+            );
+
+            if (!confirmed) return;
+
+            await handleDeleteFacility();
+        };
+    }
+}
+
+/* ================================================================
+   TENANT NAVIGATION
+================================================================ */
+
+function openTenantsViewForFacility(mode = 'find') {
     if (!selectedFacility) {
         showFacilitysMessage('Facility not found.', 'error');
         return;
@@ -356,7 +529,8 @@ function openTenantsViewForFacility() {
 
     const context = {
         facilityId: selectedFacility.id,
-        facility: selectedFacility
+        facility: selectedFacility,
+        tenantMode: mode
     };
 
     if (typeof window.navigateTo === 'function') {
@@ -367,6 +541,7 @@ function openTenantsViewForFacility() {
     const url = new URL(window.location.href);
     url.searchParams.set('view', 'tenants');
     url.searchParams.set('facility_id', selectedFacility.id);
+    url.searchParams.set('tenant_mode', mode);
     window.location.href = url.toString();
 }
 
@@ -409,11 +584,11 @@ async function handleAddFacility() {
         updated_at: new Date().toISOString()
     };
 
-    setAddButtonDisabled(true);
+    setButtonDisabled('facilityAddButton', true, 'Adding...');
 
     const { error } = await createFacility(payload);
 
-    setAddButtonDisabled(false);
+    setButtonDisabled('facilityAddButton', false, 'Add Facility');
 
     if (error) {
         showFacilitysMessage(error.message || 'Facility could not be added.', 'error');
@@ -423,6 +598,100 @@ async function handleAddFacility() {
     clearFacilityForm();
 
     showFacilitysMessage('Facility added.', 'success');
+}
+
+/* ================================================================
+   UPDATE FACILITY
+================================================================ */
+
+async function handleUpdateFacility() {
+    clearFacilitysMessage();
+
+    if (!selectedFacility) {
+        showFacilitysMessage('Facility not found.', 'error');
+        return;
+    }
+
+    const facilityName = getInputValue('facilityEditNameInput');
+    const streetAddress = getInputValue('facilityEditStreetAddressInput');
+    const city = getInputValue('facilityEditCityInput');
+    const state = getInputValue('facilityEditStateInput');
+    const zip = getInputValue('facilityEditZipInput');
+    const phone = getInputValue('facilityEditPhoneInput');
+    const notes = getInputValue('facilityEditNotesInput');
+
+    if (!facilityName) {
+        showFacilitysMessage('Enter facility name.', 'error');
+        return;
+    }
+
+    if (!streetAddress) {
+        showFacilitysMessage('Enter street address.', 'error');
+        return;
+    }
+
+    const payload = {
+        facility_name: facilityName,
+        street_address: streetAddress,
+        city: city,
+        state: state,
+        zip: zip,
+        phone: phone,
+        notes: notes
+    };
+
+    setButtonDisabled('facilitySaveEditButton', true, 'Saving...');
+
+    const { data, error } = await updateFacility({
+        facilityId: selectedFacility.id,
+        payload
+    });
+
+    setButtonDisabled('facilitySaveEditButton', false, 'Save Facility');
+
+    if (error) {
+        showFacilitysMessage(error.message || 'Facility could not be updated.', 'error');
+        return;
+    }
+
+    selectedFacility = data || {
+        ...selectedFacility,
+        ...payload
+    };
+
+    renderFacilityDashboard(selectedFacility);
+}
+
+/* ================================================================
+   DELETE FACILITY
+================================================================ */
+
+async function handleDeleteFacility() {
+    clearFacilitysMessage();
+
+    if (!selectedFacility) {
+        showFacilitysMessage('Facility not found.', 'error');
+        return;
+    }
+
+    const facilityId = selectedFacility.id;
+
+    setButtonDisabled('facilityConfirmDeleteButton', true, 'Deleting...');
+
+    const { error } = await deleteFacility(facilityId);
+
+    if (error) {
+        setButtonDisabled('facilityConfirmDeleteButton', false, 'I Understand - Delete Facility');
+        showFacilitysMessage(error.message || 'Facility could not be deleted.', 'error');
+        return;
+    }
+
+    selectedFacility = null;
+
+    renderCurrentFacilitysView();
+    await loadFacilitys();
+
+    showFacilitysMessage('Facility deleted.', 'success');
 }
 
 /* ================================================================
@@ -621,12 +890,15 @@ function clearFacilitysMessage() {
     messageBox.className = 'facilitys-message';
 }
 
-function setAddButtonDisabled(isDisabled) {
-    const button = document.getElementById('facilityAddButton');
+function setButtonDisabled(buttonId, isDisabled, text) {
+    const button = document.getElementById(buttonId);
     if (!button) return;
 
     button.disabled = isDisabled;
-    button.textContent = isDisabled ? 'Adding...' : 'Add Facility';
+
+    if (text) {
+        button.textContent = text;
+    }
 }
 
 function escapeHtml(value) {
