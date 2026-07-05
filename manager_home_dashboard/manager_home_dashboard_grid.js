@@ -12,8 +12,7 @@ import {
     fetchCurrentManagerProfile
 } from '../management/management_auth.js';
 
-import { injectManagerHomeDashboardStyles } from './manager_home_dashboard_styles.js';
-
+import { injectManagerHomeDashboardStyles } from './manager_home_dashboard_styles.js?v=20260703_manager_home_1';
 /* ================================================================
    STATE
 ================================================================ */
