@@ -2,8 +2,8 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Facilitys Screen Styles
    LOCATION: /facilitys/facilitys_styles.js
-   VERSION: v2026_07_03_facilitys_styles_first_build
-   UPDATED: 2026-07-03
+   VERSION: v2026_07_05_facilitys_styles_button_spacing
+   UPDATED: 2026-07-05
 ================================================================ */
 
 export function injectFacilitysStyles() {
@@ -85,6 +85,10 @@ export function injectFacilitysStyles() {
             font-weight: 700;
             font-size: 14px;
             cursor: pointer;
+        }
+
+        .facilitys-main-button + .facilitys-main-button {
+            margin-top: 12px;
         }
 
         .facilitys-main-button:disabled {
