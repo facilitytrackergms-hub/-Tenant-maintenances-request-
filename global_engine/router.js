@@ -2,8 +2,8 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Tenant Request App Router
    LOCATION: /global_engine/router.js
-   VERSION: v2026_07_03_manager_home_dashboard_cache_bust
-   UPDATED: 2026-07-03
+   VERSION: v2026_07_04_manager_home_dashboard_cache_bust_2
+   UPDATED: 2026-07-04
 ================================================================ */
 
 /* ================================================================
@@ -12,7 +12,7 @@
 
 const routes = {
     manager_home_dashboard: {
-        path: '../manager_home_dashboard/manager_home_dashboard_grid.js?v=20260703_manager_home_1',
+        path: '../manager_home_dashboard/manager_home_dashboard_grid.js?v=20260704_manager_home_2',
         renderFunction: 'renderManagerHomeDashboardGrid'
     },
 
@@ -212,7 +212,7 @@ function renderRouterError(container, message) {
                 font-size:11px;
                 color:#64748b;
             ">
-                router.js | v2026_07_03_manager_home_dashboard_cache_bust
+                router.js | v2026_07_04_manager_home_dashboard_cache_bust_2
             </div>
         </div>
     `;
