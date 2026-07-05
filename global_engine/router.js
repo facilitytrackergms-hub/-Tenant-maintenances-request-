@@ -2,7 +2,7 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Tenant Request App Router
    LOCATION: /global_engine/router.js
-   VERSION: v2026_07_05_tenants_route_added
+   VERSION: v2026_07_05_router_tenant_mode_facility_cache
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -27,7 +27,7 @@ const routes = {
     },
 
     facilitys: {
-        path: '../facilitys/facilitys_grid.js?v=20260705_facility_dashboard_no_delete',
+        path: '../facilitys/facilitys_grid.js?v=20260705_facilitys_one_view_edit_delete',
         renderFunction: 'renderFacilitysGrid'
     },
 
@@ -79,10 +79,25 @@ export async function navigateTo(viewName, context = {}) {
     const safeViewName = routes[viewName] ? viewName : 'manager_home_dashboard';
 
     const url = new URL(window.location.href);
+
     url.searchParams.set('view', safeViewName);
+
+    if (safeViewName !== 'tenant_request') {
+        url.searchParams.delete('tenant');
+        url.searchParams.delete('tenant_code');
+        url.searchParams.delete('request_code');
+    }
 
     if (context?.facilityId) {
         url.searchParams.set('facility_id', context.facilityId);
+    } else {
+        url.searchParams.delete('facility_id');
+    }
+
+    if (context?.tenantMode) {
+        url.searchParams.set('tenant_mode', context.tenantMode);
+    } else {
+        url.searchParams.delete('tenant_mode');
     }
 
     window.history.pushState(
@@ -221,7 +236,7 @@ function renderRouterError(container, message) {
                 font-size:11px;
                 color:#64748b;
             ">
-                router.js | v2026_07_05_tenants_route_added
+                router.js | v2026_07_05_router_tenant_mode_facility_cache
             </div>
         </div>
     `;
