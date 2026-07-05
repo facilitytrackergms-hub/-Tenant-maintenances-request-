@@ -1,8 +1,8 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Facilitys Screen - Compact Facility List and Facility Dashboard
+   PURPOSE: Facilitys Screen - Compact Facility List, Search, and Facility Dashboard
    LOCATION: /facilitys/facilitys_grid.js
-   VERSION: v2026_07_05_facilitys_compact_dashboard_buttons
+   VERSION: v2026_07_05_facilitys_search_current
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -18,7 +18,7 @@ import {
     fetchCurrentManagerProfile
 } from '../management/management_auth.js';
 
-import { injectFacilitysStyles } from './facilitys_styles.js?v=20260705_compact_dashboard_buttons_1';
+import { injectFacilitysStyles } from './facilitys_styles.js?v=20260705_facilitys_search_current_1';
 
 /* ================================================================
    STATE
@@ -81,7 +81,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
+                facilitys_grid.js | v2026_07_05_facilitys_search_current
             </div>
         </div>
     `;
@@ -114,7 +114,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
+                facilitys_grid.js | v2026_07_05_facilitys_search_current
             </div>
         </div>
     `;
@@ -159,7 +159,7 @@ function renderFacilitysMenu() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
+                facilitys_grid.js | v2026_07_05_facilitys_search_current
             </div>
         </div>
     `;
@@ -225,7 +225,7 @@ function renderAddFacilityView() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
+                facilitys_grid.js | v2026_07_05_facilitys_search_current
             </div>
         </div>
     `;
@@ -260,12 +260,14 @@ function renderCurrentFacilitysView() {
             <div class="facilitys-card">
                 <h1 class="facilitys-title">Current Facilitys</h1>
                 <p class="facilitys-subtitle">
-                    Click a facility to open it.
+                    Search or click a facility to open it.
                 </p>
 
                 <button id="facilitysBackToMenuButton" class="facilitys-small-button" style="width:100%; margin-bottom:12px;">
                     Back To Facilitys
                 </button>
+
+                <input id="facilitySearchInput" class="facilitys-input" placeholder="Search facility name or address">
 
                 <div id="facilitysList" class="facilitys-list" style="gap:7px;">
                     Loading facilitys...
@@ -275,16 +277,27 @@ function renderCurrentFacilitysView() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
+                facilitys_grid.js | v2026_07_05_facilitys_search_current
             </div>
         </div>
     `;
 
+    attachCurrentFacilitysHandlers();
+}
+
+function attachCurrentFacilitysHandlers() {
     const backButton = document.getElementById('facilitysBackToMenuButton');
+    const searchInput = document.getElementById('facilitySearchInput');
 
     if (backButton) {
         backButton.onclick = () => {
             renderFacilitysMenu();
+        };
+    }
+
+    if (searchInput) {
+        searchInput.oninput = () => {
+            renderFacilitysList(searchInput.value);
         };
     }
 }
@@ -344,7 +357,7 @@ function renderFacilityDashboard(facility) {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
+                facilitys_grid.js | v2026_07_05_facilitys_search_current
             </div>
         </div>
     `;
@@ -429,7 +442,7 @@ function renderEditFacilityView() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
+                facilitys_grid.js | v2026_07_05_facilitys_search_current
             </div>
         </div>
     `;
@@ -494,7 +507,7 @@ function renderDeleteFacilityWarningView() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
+                facilitys_grid.js | v2026_07_05_facilitys_search_current
             </div>
         </div>
     `;
@@ -730,14 +743,14 @@ async function loadFacilitys() {
 
     facilitysCache = Array.isArray(data) ? data : [];
 
-    renderFacilitysList();
+    renderFacilitysList(getInputValue('facilitySearchInput'));
 }
 
 /* ================================================================
    RENDER FACILITYS LIST
 ================================================================ */
 
-function renderFacilitysList() {
+function renderFacilitysList(searchValue = '') {
     const list = document.getElementById('facilitysList');
 
     if (!list) return;
@@ -751,7 +764,18 @@ function renderFacilitysList() {
         return;
     }
 
-    list.innerHTML = facilitysCache.map((facility) => {
+    const filteredFacilitys = filterFacilitys(searchValue);
+
+    if (!filteredFacilitys.length) {
+        list.innerHTML = `
+            <div class="facilitys-empty">
+                No facility found.
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = filteredFacilitys.map((facility) => {
         return `
             <button
                 data-open-facility="${escapeHtml(facility.id)}"
@@ -790,6 +814,27 @@ function renderFacilitysList() {
     }).join('');
 
     attachFacilityCardHandlers();
+}
+
+function filterFacilitys(searchValue) {
+    const query = String(searchValue || '').trim().toLowerCase();
+
+    if (!query) {
+        return facilitysCache;
+    }
+
+    return facilitysCache.filter((facility) => {
+        const searchableText = [
+            facility?.facility_name || '',
+            facility?.street_address || '',
+            facility?.city || '',
+            facility?.state || '',
+            facility?.zip || '',
+            facility?.phone || ''
+        ].join(' ').toLowerCase();
+
+        return searchableText.includes(query);
+    });
 }
 
 /* ================================================================
