@@ -2,7 +2,7 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Tenants Grid - Add Tenant, Auto Find Unit, Tenant Detail
    LOCATION: /tenants/tenants_grid.js
-   VERSION: v2026_07_05_tenants_grid_auto_search_no_button
+   VERSION: v2026_07_05_tenants_grid_auto_detail_after_add
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -17,7 +17,7 @@ import {
     fetchCurrentManagerProfile
 } from '../management/management_auth.js';
 
-import { injectTenantsStyles } from './tenants_styles.js?v=20260705_tenants_search_1';
+import { injectTenantsStyles } from './tenants_styles.js?v=20260705_tenants_auto_detail_after_add_1';
 
 /* ================================================================
    STATE
@@ -102,7 +102,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
             </div>
         </div>
     `;
@@ -135,7 +135,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
             </div>
         </div>
     `;
@@ -168,7 +168,7 @@ function renderMissingFacility() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
             </div>
         </div>
     `;
@@ -219,7 +219,7 @@ function renderAddTenantView() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
             </div>
         </div>
     `;
@@ -290,7 +290,7 @@ function renderFindTenantView() {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
             </div>
         </div>
     `;
@@ -381,7 +381,7 @@ function renderTenantDetail(tenant) {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_auto_search_no_button
+                tenants_grid.js | v2026_07_05_tenants_grid_auto_detail_after_add
             </div>
         </div>
     `;
@@ -465,7 +465,7 @@ async function handleAddTenant() {
 
     setAddButtonDisabled(true);
 
-    const { error } = await createTenant(payload);
+    const { data, error } = await createTenant(payload);
 
     setAddButtonDisabled(false);
 
@@ -474,9 +474,27 @@ async function handleAddTenant() {
         return;
     }
 
+    let createdTenant = normalizeCreatedTenantData(data);
+
+    const refreshedResult = await fetchTenantsByFacilityId(currentFacilityId);
+
+    if (!refreshedResult.error) {
+        tenantsCache = sortTenantsByUnitNumber(Array.isArray(refreshedResult.data) ? refreshedResult.data : []);
+
+        if (!createdTenant) {
+            createdTenant = findCreatedTenantFromCache(payload);
+        }
+    }
+
+    if (createdTenant) {
+        renderTenantDetail(createdTenant);
+        showTenantsMessage('Tenant added.', 'success');
+        return;
+    }
+
     clearTenantForm();
 
-    showTenantsMessage('Tenant added.', 'success');
+    showTenantsMessage('Tenant added. Open Find Tenant / Unit to view it.', 'success');
 }
 
 /* ================================================================
@@ -717,6 +735,30 @@ function getFacilityTitle() {
 
 function findTenantById(tenantId) {
     return tenantsCache.find((tenant) => String(tenant.id) === String(tenantId));
+}
+
+function normalizeCreatedTenantData(data) {
+    if (Array.isArray(data)) {
+        return data[0] || null;
+    }
+
+    return data || null;
+}
+
+function findCreatedTenantFromCache(payload) {
+    const matches = tenantsCache.filter((tenant) => {
+        return (
+            String(tenant.facility_id || '') === String(payload.facility_id || '') &&
+            normalizeCompareValue(tenant.unit_number) === normalizeCompareValue(payload.unit_number) &&
+            normalizeCompareValue(tenant.tenant_name) === normalizeCompareValue(payload.tenant_name)
+        );
+    });
+
+    return matches[matches.length - 1] || null;
+}
+
+function normalizeCompareValue(value) {
+    return String(value || '').trim().toLowerCase();
 }
 
 function sortTenantsByUnitNumber(tenants) {
