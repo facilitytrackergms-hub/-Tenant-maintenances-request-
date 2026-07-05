@@ -330,28 +330,27 @@ function renderFacilityDashboard(facility) {
                 ">
                     Back To Current Facilitys
                 </button>
+<div style="
+    display:grid;
+    grid-template-columns:1fr;
+    gap:14px;
+">
+    <button id="facilityAddTenantButton" class="facilitys-main-button">
+        Add Tenant
+    </button>
 
-                <div style="
-                    display:grid;
-                    grid-template-columns:1fr 1fr;
-                    gap:10px;
-                ">
-                    <button id="facilityAddTenantButton" class="facilitys-main-button" style="padding:12px 6px;">
-                        Add Tenant
-                    </button>
+    <button id="facilityFindTenantButton" class="facilitys-main-button">
+        Find Unit
+    </button>
 
-                    <button id="facilityFindTenantButton" class="facilitys-main-button" style="padding:12px 6px;">
-                        Find Unit
-                    </button>
+    <button id="facilityEditButton" class="facilitys-main-button">
+        Edit Facility
+    </button>
 
-                    <button id="facilityEditButton" class="facilitys-main-button" style="padding:12px 6px;">
-                        Edit Facility
-                    </button>
-
-                    <button id="facilityDeleteButton" class="facilitys-warning-button" style="width:100%; padding:12px 6px;">
-                        Delete Facility
-                    </button>
-                </div>
+    <button id="facilityDeleteButton" class="facilitys-warning-button" style="width:100%;">
+        Delete Facility
+    </button>
+</div>
 
                 <div id="facilitysMessage" class="facilitys-message"></div>
             </div>
