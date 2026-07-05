@@ -1,13 +1,14 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Management Screen - Login, Tenants, and Request Links
+   PURPOSE: Management Screen - Login, Tenants, Facility Dropdown, and Request Links
    LOCATION: /management/management_grid.js
-   VERSION: v2026_07_02_management_grid_login_added
-   UPDATED: 2026-07-02
+   VERSION: v2026_07_03_management_grid_facility_dropdown
+   UPDATED: 2026-07-03
 ================================================================ */
 
 import {
     fetchTenants,
+    fetchActiveFacilitysForDropdown,
     createTenant,
     updateTenantActiveStatus
 } from './management_data.js';
@@ -27,6 +28,7 @@ import { injectManagementStyles } from './management_styles.js';
 
 let managementContainer = null;
 let tenantsCache = [];
+let facilitysCache = [];
 let currentManager = null;
 
 /* ================================================================
@@ -86,7 +88,7 @@ function renderManagerLogin() {
             </div>
 
             <div class="management-footer-tag">
-                management_grid.js | v2026_07_02_management_grid_login_added
+                management_grid.js | v2026_07_03_management_grid_facility_dropdown
             </div>
         </div>
     `;
@@ -156,7 +158,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="management-footer-tag">
-                management_grid.js | v2026_07_02_management_grid_login_added
+                management_grid.js | v2026_07_03_management_grid_facility_dropdown
             </div>
         </div>
     `;
@@ -175,6 +177,8 @@ function renderAccessDenied() {
 ================================================================ */
 
 async function renderManagementHome() {
+    await loadFacilitysForDropdown();
+
     managementContainer.innerHTML = `
         <div class="management-page">
             <div class="management-card">
@@ -183,17 +187,24 @@ async function renderManagementHome() {
                     Logged in as ${escapeHtml(currentManager?.full_name || 'Manager')}
                 </p>
 
-                <button id="managementLogoutButton" class="management-small-button" style="width:100%; margin-bottom:14px;">
+                <button id="managementLogoutButton" class="management-small-button" style="width:100%; margin-bottom:10px;">
                     Logout
                 </button>
 
+                <button id="managementFacilitysButton" class="management-small-button" style="width:100%; margin-bottom:14px;">
+                    Facilitys
+                </button>
+
                 <div class="management-section-title">Add Tenant</div>
+
+                <select id="managementFacilityId" class="management-input">
+                    ${renderFacilityDropdownOptions()}
+                </select>
 
                 <input id="managementTenantName" class="management-input" placeholder="Tenant name">
                 <input id="managementUnitNumber" class="management-input" placeholder="Unit / Apartment">
                 <input id="managementPhone" class="management-input" placeholder="Phone">
                 <input id="managementEmail" class="management-input" placeholder="Email">
-                <input id="managementLocationId" class="management-input" placeholder="Location ID optional">
                 <textarea id="managementNotes" class="management-textarea" placeholder="Notes"></textarea>
 
                 <button id="managementAddTenantButton" class="management-main-button">
@@ -212,7 +223,7 @@ async function renderManagementHome() {
             </div>
 
             <div class="management-footer-tag">
-                management_grid.js | v2026_07_02_management_grid_login_added
+                management_grid.js | v2026_07_03_management_grid_facility_dropdown
             </div>
         </div>
     `;
@@ -223,12 +234,61 @@ async function renderManagementHome() {
 }
 
 /* ================================================================
+   FACILITY DROPDOWN
+================================================================ */
+
+async function loadFacilitysForDropdown() {
+    const { data, error } = await fetchActiveFacilitysForDropdown();
+
+    if (error) {
+        facilitysCache = [];
+        return;
+    }
+
+    facilitysCache = Array.isArray(data) ? data : [];
+}
+
+function renderFacilityDropdownOptions() {
+    if (!facilitysCache.length) {
+        return `
+            <option value="">No active facilitys found</option>
+        `;
+    }
+
+    return `
+        <option value="">Select Facility</option>
+        ${facilitysCache.map((facility) => {
+            return `
+                <option value="${escapeHtml(facility.id)}">
+                    ${escapeHtml(buildFacilityDropdownLabel(facility))}
+                </option>
+            `;
+        }).join('')}
+    `;
+}
+
+function buildFacilityDropdownLabel(facility) {
+    const name = facility?.facility_name || 'Facility';
+    const address = facility?.street_address || '';
+    const cityStateZip = [
+        facility?.city || '',
+        facility?.state || '',
+        facility?.zip || ''
+    ].filter(Boolean).join(', ');
+
+    return [name, address, cityStateZip]
+        .filter(Boolean)
+        .join(' - ');
+}
+
+/* ================================================================
    ATTACH MAIN HANDLERS
 ================================================================ */
 
 function attachManagementHandlers() {
     const addButton = document.getElementById('managementAddTenantButton');
     const logoutButton = document.getElementById('managementLogoutButton');
+    const facilitysButton = document.getElementById('managementFacilitysButton');
 
     if (addButton) {
         addButton.onclick = async () => {
@@ -241,6 +301,12 @@ function attachManagementHandlers() {
             await handleManagerLogout();
         };
     }
+
+    if (facilitysButton) {
+        facilitysButton.onclick = () => {
+            goToFacilitys();
+        };
+    }
 }
 
 async function handleManagerLogout() {
@@ -248,6 +314,7 @@ async function handleManagerLogout() {
 
     currentManager = null;
     tenantsCache = [];
+    facilitysCache = [];
 
     renderManagerLogin();
 }
@@ -259,12 +326,17 @@ async function handleManagerLogout() {
 async function handleAddTenant() {
     clearManagementMessage();
 
+    const facilityIdValue = getInputValue('managementFacilityId');
     const tenantName = getInputValue('managementTenantName');
     const unitNumber = getInputValue('managementUnitNumber');
     const phone = getInputValue('managementPhone');
     const email = getInputValue('managementEmail');
-    const locationIdValue = getInputValue('managementLocationId');
     const notes = getInputValue('managementNotes');
+
+    if (!facilityIdValue) {
+        showManagementMessage('Select facility.', 'error');
+        return;
+    }
 
     if (!tenantName) {
         showManagementMessage('Enter tenant name.', 'error');
@@ -281,7 +353,7 @@ async function handleAddTenant() {
         unit_number: unitNumber,
         phone: phone,
         email: email,
-        location_id: locationIdValue ? Number(locationIdValue) : null,
+        location_id: Number(facilityIdValue),
         active_status: 'active',
         notes: notes,
         updated_at: new Date().toISOString()
@@ -357,6 +429,7 @@ function renderTenantsList() {
     list.innerHTML = tenantsCache.map((tenant) => {
         const tenantLink = buildTenantRequestLink(tenant.request_public_uuid);
         const isActive = tenant.active_status === 'active';
+        const facility = findFacilityById(tenant.location_id);
 
         return `
             <div class="management-tenant-card" data-tenant-id="${escapeHtml(tenant.id)}">
@@ -377,9 +450,10 @@ function renderTenantsList() {
                 </div>
 
                 <div class="management-tenant-details">
+                    <div><strong>Facility:</strong> ${escapeHtml(facility ? buildFacilityDropdownLabel(facility) : '')}</div>
+                    <div><strong>Facility ID:</strong> ${escapeHtml(tenant.location_id || '')}</div>
                     <div><strong>Phone:</strong> ${escapeHtml(tenant.phone || '')}</div>
                     <div><strong>Email:</strong> ${escapeHtml(tenant.email || '')}</div>
-                    <div><strong>Location ID:</strong> ${escapeHtml(tenant.location_id || '')}</div>
                     <div><strong>Created by manager ID:</strong> ${escapeHtml(tenant.created_by_manager_id || '')}</div>
                     <div><strong>Assigned manager ID:</strong> ${escapeHtml(tenant.assigned_manager_id || '')}</div>
                 </div>
@@ -529,8 +603,23 @@ function resolveManagementContainer(containerOrContext) {
     );
 }
 
+function goToFacilitys() {
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('facilitys');
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'facilitys');
+    window.location.href = url.toString();
+}
+
 function findTenantById(tenantId) {
     return tenantsCache.find((tenant) => String(tenant.id) === String(tenantId));
+}
+
+function findFacilityById(facilityId) {
+    return facilitysCache.find((facility) => String(facility.id) === String(facilityId));
 }
 
 function getInputValue(id) {
@@ -539,11 +628,11 @@ function getInputValue(id) {
 }
 
 function clearTenantForm() {
+    setInputValue('managementFacilityId', '');
     setInputValue('managementTenantName', '');
     setInputValue('managementUnitNumber', '');
     setInputValue('managementPhone', '');
     setInputValue('managementEmail', '');
-    setInputValue('managementLocationId', '');
     setInputValue('managementNotes', '');
 }
 
