@@ -1,8 +1,8 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Facilitys Screen - One View Facility Flow
+   PURPOSE: Facilitys Screen - Compact Facility List and Facility Dashboard
    LOCATION: /facilitys/facilitys_grid.js
-   VERSION: v2026_07_05_facilitys_one_view_edit_delete
+   VERSION: v2026_07_05_facilitys_compact_dashboard_buttons
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -18,7 +18,7 @@ import {
     fetchCurrentManagerProfile
 } from '../management/management_auth.js';
 
-import { injectFacilitysStyles } from './facilitys_styles.js?v=20260705_button_spacing_4';
+import { injectFacilitysStyles } from './facilitys_styles.js?v=20260705_compact_dashboard_buttons_1';
 
 /* ================================================================
    STATE
@@ -81,7 +81,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
+                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
             </div>
         </div>
     `;
@@ -114,7 +114,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
+                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
             </div>
         </div>
     `;
@@ -159,7 +159,7 @@ function renderFacilitysMenu() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
+                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
             </div>
         </div>
     `;
@@ -225,7 +225,7 @@ function renderAddFacilityView() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
+                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
             </div>
         </div>
     `;
@@ -260,24 +260,22 @@ function renderCurrentFacilitysView() {
             <div class="facilitys-card">
                 <h1 class="facilitys-title">Current Facilitys</h1>
                 <p class="facilitys-subtitle">
-                    Click a facility to open its dashboard.
+                    Click a facility to open it.
                 </p>
 
-                <button id="facilitysBackToMenuButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
+                <button id="facilitysBackToMenuButton" class="facilitys-small-button" style="width:100%; margin-bottom:12px;">
                     Back To Facilitys
                 </button>
+
+                <div id="facilitysList" class="facilitys-list" style="gap:7px;">
+                    Loading facilitys...
+                </div>
 
                 <div id="facilitysMessage" class="facilitys-message"></div>
             </div>
 
-            <div class="facilitys-card">
-                <div id="facilitysList" class="facilitys-list">
-                    Loading facilitys...
-                </div>
-            </div>
-
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
+                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
             </div>
         </div>
     `;
@@ -310,33 +308,43 @@ function renderFacilityDashboard(facility) {
                     ${escapeHtml(buildCityStateZip(facility))}
                 </p>
 
-                <button id="facilityDashboardBackButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
+                <button id="facilityDashboardBackButton" class="facilitys-small-button" style="
+                    width:100%;
+                    margin-bottom:14px;
+                    padding:8px;
+                    font-size:12px;
+                    background:#64748b;
+                ">
                     Back To Current Facilitys
                 </button>
 
-                <div class="facilitys-section-title">Facility Dashboard</div>
+                <div style="
+                    display:grid;
+                    grid-template-columns:1fr 1fr;
+                    gap:10px;
+                ">
+                    <button id="facilityAddTenantButton" class="facilitys-main-button" style="padding:12px 6px;">
+                        Add Tenant
+                    </button>
 
-                <button id="facilityAddTenantButton" class="facilitys-main-button" style="margin-bottom:14px;">
-                    Add New Tenant
-                </button>
+                    <button id="facilityFindTenantButton" class="facilitys-main-button" style="padding:12px 6px;">
+                        Find Unit
+                    </button>
 
-                <button id="facilityFindTenantButton" class="facilitys-main-button" style="margin-bottom:14px;">
-                    Find Tenant / Unit
-                </button>
+                    <button id="facilityEditButton" class="facilitys-main-button" style="padding:12px 6px;">
+                        Edit Facility
+                    </button>
 
-                <button id="facilityEditButton" class="facilitys-main-button" style="margin-bottom:14px;">
-                    Edit Facility
-                </button>
-
-                <button id="facilityDeleteButton" class="facilitys-warning-button" style="width:100%;">
-                    Delete Facility
-                </button>
+                    <button id="facilityDeleteButton" class="facilitys-warning-button" style="width:100%; padding:12px 6px;">
+                        Delete Facility
+                    </button>
+                </div>
 
                 <div id="facilitysMessage" class="facilitys-message"></div>
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
+                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
             </div>
         </div>
     `;
@@ -402,7 +410,7 @@ function renderEditFacilityView() {
                 </p>
 
                 <button id="facilityEditBackButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
-                    Back To Facility Dashboard
+                    Back To Facility
                 </button>
 
                 <input id="facilityEditNameInput" class="facilitys-input" placeholder="Facility name" value="${escapeHtml(selectedFacility.facility_name || '')}">
@@ -421,7 +429,7 @@ function renderEditFacilityView() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
+                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
             </div>
         </div>
     `;
@@ -475,10 +483,10 @@ function renderDeleteFacilityWarningView() {
                 </div>
 
                 <button id="facilityDeleteBackButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
-                    Cancel - Back To Facility Dashboard
+                    Cancel - Back To Facility
                 </button>
 
-                <button id="facilityConfirmDeleteButton" class="facilitys-warning-button" style="width:100%;">
+                <button id="facilityConfirmDeleteButton" class="facilitys-warning-button" style="width:100%; padding:12px;">
                     I Understand - Delete Facility
                 </button>
 
@@ -486,7 +494,7 @@ function renderDeleteFacilityWarningView() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facilitys_one_view_edit_delete
+                facilitys_grid.js | v2026_07_05_facilitys_compact_dashboard_buttons
             </div>
         </div>
     `;
@@ -745,18 +753,37 @@ function renderFacilitysList() {
 
     list.innerHTML = facilitysCache.map((facility) => {
         return `
-            <button class="facilitys-item-card facilitys-open-card" data-open-facility="${escapeHtml(facility.id)}" style="width:100%; text-align:left; cursor:pointer;">
-                <div class="facilitys-item-header">
-                    <div>
-                        <div class="facilitys-item-name">
-                            ${escapeHtml(facility.facility_name || 'Facility')}
-                        </div>
+            <button
+                data-open-facility="${escapeHtml(facility.id)}"
+                style="
+                    width:100%;
+                    text-align:left;
+                    cursor:pointer;
+                    border:1px solid #93c5fd;
+                    background:#eff6ff;
+                    border-radius:10px;
+                    padding:8px 10px;
+                    box-sizing:border-box;
+                    margin:0;
+                "
+            >
+                <div style="
+                    font-size:15px;
+                    font-weight:800;
+                    color:#0f172a;
+                    line-height:1.2;
+                ">
+                    ${escapeHtml(facility.facility_name || 'Facility')}
+                </div>
 
-                        <div class="facilitys-item-address">
-                            ${escapeHtml(facility.street_address || '')}<br>
-                            ${escapeHtml(buildCityStateZip(facility))}
-                        </div>
-                    </div>
+                <div style="
+                    font-size:12px;
+                    color:#334155;
+                    line-height:1.25;
+                    margin-top:2px;
+                ">
+                    ${escapeHtml(facility.street_address || '')}
+                    ${buildCityStateZip(facility) ? ' - ' + escapeHtml(buildCityStateZip(facility)) : ''}
                 </div>
             </button>
         `;
