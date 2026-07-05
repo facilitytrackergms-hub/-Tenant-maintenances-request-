@@ -16,7 +16,7 @@ import {
     fetchCurrentManagerProfile
 } from '../management/management_auth.js';
 
-import { injectFacilitysStyles } from './facilitys_styles.js';
+import { injectFacilitysStyles } from './facilitys_styles.js?v=20260705_button_spacing_2';
 
 /* ================================================================
    STATE
