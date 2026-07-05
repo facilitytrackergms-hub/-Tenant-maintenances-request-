@@ -2,8 +2,8 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Management Data Service
    LOCATION: /management/management_data.js
-   VERSION: v2026_07_02_management_data_first_split
-   UPDATED: 2026-07-02
+   VERSION: v2026_07_03_management_data_facility_dropdown
+   UPDATED: 2026-07-03
 ================================================================ */
 
 import { supabase } from '../global_engine/supabaseClient.js';
@@ -20,6 +20,27 @@ export async function fetchTenants() {
 
     if (error) {
         console.error('Fetch tenants error:', error);
+    }
+
+    return {
+        data: Array.isArray(data) ? data : [],
+        error
+    };
+}
+
+/* ================================================================
+   FETCH ACTIVE FACILITYS FOR TENANT DROPDOWN
+================================================================ */
+
+export async function fetchActiveFacilitysForDropdown() {
+    const { data, error } = await supabase
+        .from('facilitys')
+        .select('id, facility_name, street_address, city, state, zip, active_status')
+        .eq('active_status', 'active')
+        .order('facility_name', { ascending: true });
+
+    if (error) {
+        console.error('Fetch active facilitys for dropdown error:', error);
     }
 
     return {
