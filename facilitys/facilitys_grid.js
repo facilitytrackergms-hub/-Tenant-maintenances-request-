@@ -1,15 +1,14 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Facilitys Screen - Facility Buttons and Dashboard Navigation
+   PURPOSE: Facilitys Screen - Facility List and Facility Dashboard
    LOCATION: /facilitys/facilitys_grid.js
-   VERSION: v2026_07_05_facility_buttons_dashboard_nav
+   VERSION: v2026_07_05_facility_dashboard_no_delete
    UPDATED: 2026-07-05
 ================================================================ */
 
 import {
     fetchFacilitys,
-    createFacility,
-    updateFacilityStatus
+    createFacility
 } from './facilitys_data.js';
 
 import {
@@ -26,6 +25,7 @@ import { injectFacilitysStyles } from './facilitys_styles.js';
 let facilitysContainer = null;
 let facilitysCache = [];
 let currentManager = null;
+let selectedFacility = null;
 
 /* ================================================================
    MAIN RENDER
@@ -81,7 +81,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facility_buttons_dashboard_nav
+                facilitys_grid.js | v2026_07_05_facility_dashboard_no_delete
             </div>
         </div>
     `;
@@ -114,7 +114,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facility_buttons_dashboard_nav
+                facilitys_grid.js | v2026_07_05_facility_dashboard_no_delete
             </div>
         </div>
     `;
@@ -133,6 +133,8 @@ function renderAccessDenied() {
 ================================================================ */
 
 function renderFacilitysHome() {
+    selectedFacility = null;
+
     facilitysContainer.innerHTML = `
         <div class="facilitys-page">
             <div class="facilitys-card">
@@ -171,12 +173,93 @@ function renderFacilitysHome() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facility_buttons_dashboard_nav
+                facilitys_grid.js | v2026_07_05_facility_dashboard_no_delete
             </div>
         </div>
     `;
 
     attachFacilitysHandlers();
+}
+
+/* ================================================================
+   FACILITY DASHBOARD
+================================================================ */
+
+function renderFacilityDashboard(facility) {
+    selectedFacility = facility;
+
+    facilitysContainer.innerHTML = `
+        <div class="facilitys-page">
+            <div class="facilitys-card">
+                <h1 class="facilitys-title">
+                    ${escapeHtml(facility.facility_name || 'Facility')}
+                </h1>
+
+                <p class="facilitys-subtitle">
+                    ${escapeHtml(facility.street_address || '')}<br>
+                    ${escapeHtml(buildCityStateZip(facility))}
+                </p>
+
+                <button id="facilityDashboardBackButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
+                    Back To Facilitys
+                </button>
+
+                <div class="facilitys-section-title">Facility Dashboard</div>
+
+                <button id="facilityAddTenantButton" class="facilitys-main-button">
+                    Add New Tenant
+                </button>
+
+                <div id="facilitysMessage" class="facilitys-message"></div>
+            </div>
+
+            <div class="facilitys-footer-tag">
+                facilitys_grid.js | v2026_07_05_facility_dashboard_no_delete
+            </div>
+        </div>
+    `;
+
+    attachFacilityDashboardHandlers();
+}
+
+function attachFacilityDashboardHandlers() {
+    const backButton = document.getElementById('facilityDashboardBackButton');
+    const addTenantButton = document.getElementById('facilityAddTenantButton');
+
+    if (backButton) {
+        backButton.onclick = async () => {
+            renderFacilitysHome();
+            await loadFacilitys();
+        };
+    }
+
+    if (addTenantButton) {
+        addTenantButton.onclick = () => {
+            openTenantsViewForFacility();
+        };
+    }
+}
+
+function openTenantsViewForFacility() {
+    if (!selectedFacility) {
+        showFacilitysMessage('Facility not found.', 'error');
+        return;
+    }
+
+    const context = {
+        facilityId: selectedFacility.id,
+        facility: selectedFacility
+    };
+
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('tenants', context);
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'tenants');
+    url.searchParams.set('facility_id', selectedFacility.id);
+    window.location.href = url.toString();
 }
 
 /* ================================================================
@@ -307,8 +390,6 @@ function renderFacilitysList() {
     }
 
     list.innerHTML = facilitysCache.map((facility) => {
-        const isActive = facility.active_status === 'active';
-
         return `
             <div class="facilitys-item-card facilitys-open-card" data-open-facility="${escapeHtml(facility.id)}">
                 <div class="facilitys-item-header">
@@ -322,16 +403,6 @@ function renderFacilitysList() {
                             ${escapeHtml(buildCityStateZip(facility))}
                         </div>
                     </div>
-
-                    <div class="${isActive ? 'facilitys-status-active' : 'facilitys-status-inactive'}">
-                        ${escapeHtml(facility.active_status || 'inactive')}
-                    </div>
-                </div>
-
-                <div class="facilitys-button-row">
-                    <button class="${isActive ? 'facilitys-warning-button' : 'facilitys-small-button'}" data-toggle-facility="${escapeHtml(facility.id)}">
-                        ${isActive ? 'Deactivate Facility' : 'Reactivate Facility'}
-                    </button>
                 </div>
             </div>
         `;
@@ -351,15 +422,6 @@ function attachFacilityCardHandlers() {
             openFacilityDashboard(facilityId);
         };
     });
-
-    document.querySelectorAll('[data-toggle-facility]').forEach((button) => {
-        button.onclick = async (event) => {
-            event.stopPropagation();
-
-            const facilityId = button.getAttribute('data-toggle-facility');
-            await toggleFacilityActiveStatus(facilityId);
-        };
-    });
 }
 
 function openFacilityDashboard(facilityId) {
@@ -370,50 +432,7 @@ function openFacilityDashboard(facilityId) {
         return;
     }
 
-    if (facility.active_status !== 'active') {
-        showFacilitysMessage('This facility is inactive.', 'error');
-        return;
-    }
-
-    const context = {
-        facilityId: facility.id,
-        facility: facility
-    };
-
-    if (typeof window.navigateTo === 'function') {
-        window.navigateTo('manager_home_dashboard', context);
-        return;
-    }
-
-    const url = new URL(window.location.href);
-    url.searchParams.set('view', 'manager_home_dashboard');
-    url.searchParams.set('facility_id', facility.id);
-    window.location.href = url.toString();
-}
-
-async function toggleFacilityActiveStatus(facilityId) {
-    const facility = findFacilityById(facilityId);
-
-    if (!facility) {
-        showFacilitysMessage('Facility not found.', 'error');
-        return;
-    }
-
-    const nextStatus = facility.active_status === 'active' ? 'inactive' : 'active';
-
-    const { error } = await updateFacilityStatus({
-        facilityId: facility.id,
-        activeStatus: nextStatus
-    });
-
-    if (error) {
-        showFacilitysMessage(error.message || 'Facility status could not be updated.', 'error');
-        return;
-    }
-
-    showFacilitysMessage(`Facility marked ${nextStatus}.`, 'success');
-
-    await loadFacilitys();
+    renderFacilityDashboard(facility);
 }
 
 /* ================================================================
