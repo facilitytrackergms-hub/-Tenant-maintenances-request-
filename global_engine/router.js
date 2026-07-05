@@ -2,7 +2,7 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Tenant Request App Router
    LOCATION: /global_engine/router.js
-   VERSION: v2026_07_03_dashboard_route_added
+   VERSION: v2026_07_03_manager_home_dashboard_route_added
    UPDATED: 2026-07-03
 ================================================================ */
 
@@ -11,9 +11,9 @@
 ================================================================ */
 
 const routes = {
-    dashboard: {
-        path: '../dashboard/dashboard_grid.js',
-        renderFunction: 'renderDashboardGrid'
+    manager_home_dashboard: {
+        path: '../manager_home_dashboard/manager_home_dashboard_grid.js',
+        renderFunction: 'renderManagerHomeDashboardGrid'
     },
 
     tenant_request: {
@@ -71,7 +71,7 @@ export async function navigateTo(viewName, context = {}) {
         return;
     }
 
-    const safeViewName = routes[viewName] ? viewName : 'dashboard';
+    const safeViewName = routes[viewName] ? viewName : 'manager_home_dashboard';
 
     const url = new URL(window.location.href);
     url.searchParams.set('view', safeViewName);
@@ -96,7 +96,7 @@ export async function navigateTo(viewName, context = {}) {
 
 async function loadView(viewName, context = {}) {
     const app = getAppContainer();
-    const safeViewName = routes[viewName] ? viewName : 'dashboard';
+    const safeViewName = routes[viewName] ? viewName : 'manager_home_dashboard';
     const route = routes[safeViewName];
 
     if (!route) {
@@ -154,7 +154,7 @@ function getCurrentViewName() {
         return viewFromUrl;
     }
 
-    return 'dashboard';
+    return 'manager_home_dashboard';
 }
 
 function hasTenantRequestCode(urlParams) {
@@ -212,7 +212,7 @@ function renderRouterError(container, message) {
                 font-size:11px;
                 color:#64748b;
             ">
-                router.js | v2026_07_03_dashboard_route_added
+                router.js | v2026_07_03_manager_home_dashboard_route_added
             </div>
         </div>
     `;
