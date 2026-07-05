@@ -1,8 +1,8 @@
 /* ================================================================
    TENANT MAINTENANCE REQUEST APP
-   PURPOSE: Facilitys Screen - Facility List and Facility Dashboard
+   PURPOSE: Facilitys Screen - Menu, Add Facility, Current Facilitys, Facility Dashboard
    LOCATION: /facilitys/facilitys_grid.js
-   VERSION: v2026_07_05_facility_dashboard_no_delete
+   VERSION: v2026_07_05_facilitys_menu_split_views
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -57,9 +57,7 @@ export async function renderFacilitysGrid(containerOrContext = {}) {
 
     currentManager = manager;
 
-    renderFacilitysHome();
-
-    await loadFacilitys();
+    renderFacilitysMenu();
 }
 
 /* ================================================================
@@ -81,7 +79,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facility_dashboard_no_delete
+                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
             </div>
         </div>
     `;
@@ -114,7 +112,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facility_dashboard_no_delete
+                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
             </div>
         </div>
     `;
@@ -129,10 +127,10 @@ function renderAccessDenied() {
 }
 
 /* ================================================================
-   FACILITYS HOME
+   FACILITYS MENU
 ================================================================ */
 
-function renderFacilitysHome() {
+function renderFacilitysMenu() {
     selectedFacility = null;
 
     facilitysContainer.innerHTML = `
@@ -144,10 +142,70 @@ function renderFacilitysHome() {
                 </p>
 
                 <button id="facilitysBackButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
-                    Back To Management
+                    Back To Manager Dashboard
                 </button>
 
-                <div class="facilitys-section-title">Add Facility</div>
+                <button id="facilitysAddNewButton" class="facilitys-main-button">
+                    Add New Facility
+                </button>
+
+                <button id="facilitysCurrentButton" class="facilitys-main-button">
+                    Current Facilitys
+                </button>
+
+                <div id="facilitysMessage" class="facilitys-message"></div>
+            </div>
+
+            <div class="facilitys-footer-tag">
+                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
+            </div>
+        </div>
+    `;
+
+    attachFacilitysMenuHandlers();
+}
+
+function attachFacilitysMenuHandlers() {
+    const backButton = document.getElementById('facilitysBackButton');
+    const addNewButton = document.getElementById('facilitysAddNewButton');
+    const currentButton = document.getElementById('facilitysCurrentButton');
+
+    if (backButton) {
+        backButton.onclick = () => {
+            goToManagerDashboard();
+        };
+    }
+
+    if (addNewButton) {
+        addNewButton.onclick = () => {
+            renderAddFacilityView();
+        };
+    }
+
+    if (currentButton) {
+        currentButton.onclick = async () => {
+            renderCurrentFacilitysView();
+            await loadFacilitys();
+        };
+    }
+}
+
+/* ================================================================
+   ADD FACILITY VIEW
+================================================================ */
+
+function renderAddFacilityView() {
+    facilitysContainer.innerHTML = `
+        <div class="facilitys-page">
+            <div class="facilitys-card">
+                <h1 class="facilitys-title">Add Facility</h1>
+                <p class="facilitys-subtitle">
+                    Add one facility at a time.
+                </p>
+
+                <button id="facilitysBackToMenuButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
+                    Back To Facilitys
+                </button>
 
                 <input id="facilityNameInput" class="facilitys-input" placeholder="Facility name">
                 <input id="facilityStreetAddressInput" class="facilitys-input" placeholder="Street address">
@@ -164,21 +222,71 @@ function renderFacilitysHome() {
                 <div id="facilitysMessage" class="facilitys-message"></div>
             </div>
 
-            <div class="facilitys-card">
-                <div class="facilitys-section-title">Facility List</div>
+            <div class="facilitys-footer-tag">
+                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
+            </div>
+        </div>
+    `;
 
+    attachAddFacilityHandlers();
+}
+
+function attachAddFacilityHandlers() {
+    const backButton = document.getElementById('facilitysBackToMenuButton');
+    const addButton = document.getElementById('facilityAddButton');
+
+    if (backButton) {
+        backButton.onclick = () => {
+            renderFacilitysMenu();
+        };
+    }
+
+    if (addButton) {
+        addButton.onclick = async () => {
+            await handleAddFacility();
+        };
+    }
+}
+
+/* ================================================================
+   CURRENT FACILITYS VIEW
+================================================================ */
+
+function renderCurrentFacilitysView() {
+    facilitysContainer.innerHTML = `
+        <div class="facilitys-page">
+            <div class="facilitys-card">
+                <h1 class="facilitys-title">Current Facilitys</h1>
+                <p class="facilitys-subtitle">
+                    Click a facility to open its dashboard.
+                </p>
+
+                <button id="facilitysBackToMenuButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
+                    Back To Facilitys
+                </button>
+
+                <div id="facilitysMessage" class="facilitys-message"></div>
+            </div>
+
+            <div class="facilitys-card">
                 <div id="facilitysList" class="facilitys-list">
                     Loading facilitys...
                 </div>
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facility_dashboard_no_delete
+                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
             </div>
         </div>
     `;
 
-    attachFacilitysHandlers();
+    const backButton = document.getElementById('facilitysBackToMenuButton');
+
+    if (backButton) {
+        backButton.onclick = () => {
+            renderFacilitysMenu();
+        };
+    }
 }
 
 /* ================================================================
@@ -201,7 +309,7 @@ function renderFacilityDashboard(facility) {
                 </p>
 
                 <button id="facilityDashboardBackButton" class="facilitys-small-button" style="width:100%; margin-bottom:14px;">
-                    Back To Facilitys
+                    Back To Current Facilitys
                 </button>
 
                 <div class="facilitys-section-title">Facility Dashboard</div>
@@ -214,7 +322,7 @@ function renderFacilityDashboard(facility) {
             </div>
 
             <div class="facilitys-footer-tag">
-                facilitys_grid.js | v2026_07_05_facility_dashboard_no_delete
+                facilitys_grid.js | v2026_07_05_facilitys_menu_split_views
             </div>
         </div>
     `;
@@ -228,7 +336,7 @@ function attachFacilityDashboardHandlers() {
 
     if (backButton) {
         backButton.onclick = async () => {
-            renderFacilitysHome();
+            renderCurrentFacilitysView();
             await loadFacilitys();
         };
     }
@@ -260,27 +368,6 @@ function openTenantsViewForFacility() {
     url.searchParams.set('view', 'tenants');
     url.searchParams.set('facility_id', selectedFacility.id);
     window.location.href = url.toString();
-}
-
-/* ================================================================
-   HANDLERS
-================================================================ */
-
-function attachFacilitysHandlers() {
-    const backButton = document.getElementById('facilitysBackButton');
-    const addButton = document.getElementById('facilityAddButton');
-
-    if (backButton) {
-        backButton.onclick = () => {
-            goToManagement();
-        };
-    }
-
-    if (addButton) {
-        addButton.onclick = async () => {
-            await handleAddFacility();
-        };
-    }
 }
 
 /* ================================================================
@@ -336,8 +423,6 @@ async function handleAddFacility() {
     clearFacilityForm();
 
     showFacilitysMessage('Facility added.', 'success');
-
-    await loadFacilitys();
 }
 
 /* ================================================================
@@ -391,7 +476,7 @@ function renderFacilitysList() {
 
     list.innerHTML = facilitysCache.map((facility) => {
         return `
-            <div class="facilitys-item-card facilitys-open-card" data-open-facility="${escapeHtml(facility.id)}">
+            <button class="facilitys-item-card facilitys-open-card" data-open-facility="${escapeHtml(facility.id)}" style="width:100%; text-align:left; cursor:pointer;">
                 <div class="facilitys-item-header">
                     <div>
                         <div class="facilitys-item-name">
@@ -404,7 +489,7 @@ function renderFacilitysList() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </button>
         `;
     }).join('');
 
@@ -436,6 +521,32 @@ function openFacilityDashboard(facilityId) {
 }
 
 /* ================================================================
+   NAVIGATION
+================================================================ */
+
+function goToManagement() {
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('management');
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'management');
+    window.location.href = url.toString();
+}
+
+function goToManagerDashboard() {
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('manager_home_dashboard');
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'manager_home_dashboard');
+    window.location.href = url.toString();
+}
+
+/* ================================================================
    HELPERS
 ================================================================ */
 
@@ -458,17 +569,6 @@ function resolveFacilitysContainer(containerOrContext) {
         document.getElementById('root') ||
         document.body
     );
-}
-
-function goToManagement() {
-    if (typeof window.navigateTo === 'function') {
-        window.navigateTo('management');
-        return;
-    }
-
-    const url = new URL(window.location.href);
-    url.searchParams.set('view', 'management');
-    window.location.href = url.toString();
 }
 
 function findFacilityById(facilityId) {
