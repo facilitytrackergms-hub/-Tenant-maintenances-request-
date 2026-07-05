@@ -1,8 +1,8 @@
 /* ================================================================
-   FACILITY TRACKER MODULAR VIEW SYSTEM
+   TENANT MAINTENANCE REQUEST APP
    PURPOSE: Tenant Request App Router
    LOCATION: /global_engine/router.js
-   VERSION: v2026_07_03_facilitys_route_added
+   VERSION: v2026_07_03_dashboard_route_added
    UPDATED: 2026-07-03
 ================================================================ */
 
@@ -11,6 +11,11 @@
 ================================================================ */
 
 const routes = {
+    dashboard: {
+        path: '../dashboard/dashboard_grid.js',
+        renderFunction: 'renderDashboardGrid'
+    },
+
     tenant_request: {
         path: '../tenant_request/tenant_request_grid.js',
         renderFunction: 'renderTenantRequestGrid'
@@ -66,7 +71,7 @@ export async function navigateTo(viewName, context = {}) {
         return;
     }
 
-    const safeViewName = routes[viewName] ? viewName : 'tenant_request';
+    const safeViewName = routes[viewName] ? viewName : 'dashboard';
 
     const url = new URL(window.location.href);
     url.searchParams.set('view', safeViewName);
@@ -91,7 +96,7 @@ export async function navigateTo(viewName, context = {}) {
 
 async function loadView(viewName, context = {}) {
     const app = getAppContainer();
-    const safeViewName = routes[viewName] ? viewName : 'tenant_request';
+    const safeViewName = routes[viewName] ? viewName : 'dashboard';
     const route = routes[safeViewName];
 
     if (!route) {
@@ -141,11 +146,23 @@ function getCurrentViewName() {
     const urlParams = new URLSearchParams(window.location.search);
     const viewFromUrl = urlParams.get('view');
 
+    if (hasTenantRequestCode(urlParams)) {
+        return 'tenant_request';
+    }
+
     if (viewFromUrl && routes[viewFromUrl]) {
         return viewFromUrl;
     }
 
-    return 'tenant_request';
+    return 'dashboard';
+}
+
+function hasTenantRequestCode(urlParams) {
+    return (
+        urlParams.has('tenant') ||
+        urlParams.has('tenant_code') ||
+        urlParams.has('request_code')
+    );
 }
 
 /* ================================================================
@@ -195,7 +212,7 @@ function renderRouterError(container, message) {
                 font-size:11px;
                 color:#64748b;
             ">
-                router.js | v2026_07_03_facilitys_route_added
+                router.js | v2026_07_03_dashboard_route_added
             </div>
         </div>
     `;
