@@ -2,8 +2,8 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Facilitys Data Service
    LOCATION: /facilitys/facilitys_data.js
-   VERSION: v2026_07_03_facilitys_data_first_build
-   UPDATED: 2026-07-03
+   VERSION: v2026_07_05_facilitys_data_edit_delete_support
+   UPDATED: 2026-07-05
 ================================================================ */
 
 import { supabase } from '../global_engine/supabaseClient.js';
@@ -68,6 +68,39 @@ export async function createFacility(payload) {
 }
 
 /* ================================================================
+   UPDATE FACILITY
+================================================================ */
+
+export async function updateFacility({ facilityId, payload }) {
+    if (!facilityId) {
+        return {
+            data: null,
+            error: {
+                message: 'Missing facility ID.'
+            }
+        };
+    }
+
+    const updatePayload = {
+        ...payload,
+        updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+        .from('facilitys')
+        .update(updatePayload)
+        .eq('id', facilityId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Update facility error:', error);
+    }
+
+    return { data, error };
+}
+
+/* ================================================================
    UPDATE FACILITY STATUS
 ================================================================ */
 
@@ -84,6 +117,33 @@ export async function updateFacilityStatus({ facilityId, activeStatus }) {
 
     if (error) {
         console.error('Update facility status error:', error);
+    }
+
+    return { data, error };
+}
+
+/* ================================================================
+   DELETE FACILITY
+================================================================ */
+
+export async function deleteFacility(facilityId) {
+    if (!facilityId) {
+        return {
+            data: null,
+            error: {
+                message: 'Missing facility ID.'
+            }
+        };
+    }
+
+    const { data, error } = await supabase
+        .from('facilitys')
+        .delete()
+        .eq('id', facilityId)
+        .select();
+
+    if (error) {
+        console.error('Delete facility error:', error);
     }
 
     return { data, error };
