@@ -32,7 +32,7 @@ const routes = {
     },
 
     tenants: {
-        path: '../tenants/tenants_grid.js?v=20260705_tenants_1',
+        path: '../tenants/tenants_grid.js?v=20260705_tenants_search_1',
         renderFunction: 'renderTenantsGrid'
     }
 };
