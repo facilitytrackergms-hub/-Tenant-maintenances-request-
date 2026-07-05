@@ -27,7 +27,7 @@ const routes = {
 },
 
     facilitys: {
-        path: '../facilitys/facilitys_grid.js?v=20260705_facilitys_compact_dashboard_buttons',
+       path: '../facilitys/facilitys_grid.js?v=20260705_facilitys_search_current',
         renderFunction: 'renderFacilitysGrid'
     },
 
