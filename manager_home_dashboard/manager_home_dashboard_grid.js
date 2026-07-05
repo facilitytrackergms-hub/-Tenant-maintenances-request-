@@ -2,8 +2,8 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Manager Home Dashboard
    LOCATION: /manager_home_dashboard/manager_home_dashboard_grid.js
-   VERSION: v2026_07_03_manager_home_dashboard_grid_first_build
-   UPDATED: 2026-07-03
+   VERSION: v2026_07_05_manager_home_dashboard_two_door_method
+   UPDATED: 2026-07-05
 ================================================================ */
 
 import {
@@ -13,6 +13,7 @@ import {
 } from '../management/management_auth.js';
 
 import { injectManagerHomeDashboardStyles } from './manager_home_dashboard_styles.js?v=20260704_manager_home_2';
+
 /* ================================================================
    STATE
 ================================================================ */
@@ -74,7 +75,7 @@ function renderLoginRequired() {
             </div>
 
             <div class="manager-home-footer-tag">
-                manager_home_dashboard_grid.js | v2026_07_03_manager_home_dashboard_grid_first_build
+                manager_home_dashboard_grid.js | v2026_07_05_manager_home_dashboard_two_door_method
             </div>
         </div>
     `;
@@ -109,7 +110,7 @@ function renderAccessDenied() {
             </div>
 
             <div class="manager-home-footer-tag">
-                manager_home_dashboard_grid.js | v2026_07_03_manager_home_dashboard_grid_first_build
+                manager_home_dashboard_grid.js | v2026_07_05_manager_home_dashboard_two_door_method
             </div>
         </div>
     `;
@@ -137,28 +138,12 @@ function renderManagerHomeDashboard() {
                 </p>
 
                 <div class="manager-home-button-grid">
-                    <button id="managerHomeFacilitysButton" class="manager-home-button">
-                        Add / Delete Facilitys
-                    </button>
-
-                    <button id="managerHomeTenantsButton" class="manager-home-button">
-                        Add / Delete Tenants
-                    </button>
-
-                    <button id="managerHomeRequestsButton" class="manager-home-button secondary">
-                        Tenant Maintenance Requests
-                    </button>
-
-                    <button id="managerHomeAssignWorkButton" class="manager-home-button secondary">
-                        Assign Work
-                    </button>
-
-                    <button id="managerHomeManagersButton" class="manager-home-button secondary">
+                    <button id="managerHomeManagersButton" class="manager-home-button">
                         Managers
                     </button>
 
-                    <button id="managerHomeLogoutButton" class="manager-home-button warning">
-                        Logout
+                    <button id="managerHomeFacilitysButton" class="manager-home-button">
+                        Facilitys
                     </button>
                 </div>
 
@@ -166,7 +151,7 @@ function renderManagerHomeDashboard() {
             </div>
 
             <div class="manager-home-footer-tag">
-                manager_home_dashboard_grid.js | v2026_07_03_manager_home_dashboard_grid_first_build
+                manager_home_dashboard_grid.js | v2026_07_05_manager_home_dashboard_two_door_method
             </div>
         </div>
     `;
@@ -179,46 +164,18 @@ function renderManagerHomeDashboard() {
 ================================================================ */
 
 function attachDashboardHandlers() {
-    const facilitysButton = document.getElementById('managerHomeFacilitysButton');
-    const tenantsButton = document.getElementById('managerHomeTenantsButton');
-    const requestsButton = document.getElementById('managerHomeRequestsButton');
-    const assignWorkButton = document.getElementById('managerHomeAssignWorkButton');
     const managersButton = document.getElementById('managerHomeManagersButton');
-    const logoutButton = document.getElementById('managerHomeLogoutButton');
+    const facilitysButton = document.getElementById('managerHomeFacilitysButton');
 
-    if (facilitysButton) {
-        facilitysButton.onclick = () => {
-            goToView('facilitys');
-        };
-    }
-
-    if (tenantsButton) {
-        tenantsButton.onclick = () => {
+    if (managersButton) {
+        managersButton.onclick = () => {
             goToView('management');
         };
     }
 
-    if (requestsButton) {
-        requestsButton.onclick = () => {
-            showManagerHomeMessage('Tenant Maintenance Requests dashboard is next.', 'success');
-        };
-    }
-
-    if (assignWorkButton) {
-        assignWorkButton.onclick = () => {
-            showManagerHomeMessage('Assign Work dashboard is next.', 'success');
-        };
-    }
-
-    if (managersButton) {
-        managersButton.onclick = () => {
-            showManagerHomeMessage('Managers dashboard is next.', 'success');
-        };
-    }
-
-    if (logoutButton) {
-        logoutButton.onclick = async () => {
-            await handleLogout();
+    if (facilitysButton) {
+        facilitysButton.onclick = () => {
+            goToView('facilitys');
         };
     }
 }
@@ -269,14 +226,6 @@ function resolveManagerHomeContainer(containerOrContext) {
         document.getElementById('root') ||
         document.body
     );
-}
-
-function showManagerHomeMessage(message, type = 'info') {
-    const messageBox = document.getElementById('managerHomeMessage');
-    if (!messageBox) return;
-
-    messageBox.textContent = message || '';
-    messageBox.className = `manager-home-message ${type}`;
 }
 
 function escapeHtml(value) {
