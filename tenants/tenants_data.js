@@ -2,7 +2,7 @@
    TENANT MAINTENANCE REQUEST APP
    PURPOSE: Tenants Data Service
    LOCATION: /tenants/tenants_data.js
-   VERSION: v2026_07_05_tenants_data_delete_empty_unit
+   VERSION: v2026_07_05_tenants_data_generate_new_link
    UPDATED: 2026-07-05
 ================================================================ */
 
@@ -41,6 +41,7 @@ export async function fetchTenantsByFacilityId(facilityId) {
 
 export async function createTenant(payload) {
     const requestCode = payload.request_code || crypto.randomUUID();
+    const requestPublicUuid = payload.request_public_uuid || crypto.randomUUID();
 
     const insertPayload = {
         facility_id: payload.facility_id,
@@ -51,6 +52,7 @@ export async function createTenant(payload) {
         active_status: payload.active_status || 'active',
         notes: payload.notes || '',
         request_code: requestCode,
+        request_public_uuid: requestPublicUuid,
         created_by_manager_id: payload.created_by_manager_id || null,
         assigned_manager_id: payload.assigned_manager_id || null,
         updated_at: new Date().toISOString()
@@ -101,6 +103,41 @@ export async function updateTenant({ tenantId, payload }) {
 
     if (error) {
         console.error('Update tenant error:', error);
+    }
+
+    return { data, error };
+}
+
+/* ================================================================
+   GENERATE NEW TENANT REQUEST LINK
+================================================================ */
+
+export async function generateNewTenantRequestLink(tenantId) {
+    if (!tenantId) {
+        return {
+            data: null,
+            error: {
+                message: 'Missing tenant ID.'
+            }
+        };
+    }
+
+    const newRequestCode = crypto.randomUUID();
+    const newPublicUuid = crypto.randomUUID();
+
+    const { data, error } = await supabase
+        .from('tenants')
+        .update({
+            request_code: newRequestCode,
+            request_public_uuid: newPublicUuid,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', tenantId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Generate new tenant request link error:', error);
     }
 
     return { data, error };
