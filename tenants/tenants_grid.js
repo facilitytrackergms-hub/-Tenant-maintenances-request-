@@ -16,7 +16,7 @@ import {
     generateNewTenantRequestLink,
     fetchTenantMaintenanceRequestsByTenantId,
     updateTenantMaintenanceRequest
-} from './tenants_data.js';from './tenants_data.js';
+} from './tenants_data.js';
 
 
 import {
