@@ -13,9 +13,10 @@ import {
     updateTenantStatus,
     markTenantMovedOut,
     deleteTenant,
+    generateNewTenantRequestLink,
     fetchTenantMaintenanceRequestsByTenantId,
     updateTenantMaintenanceRequest
-} from './tenants_data.js';
+} from './tenants_data.js';from './tenants_data.js';
 
 
 import {
@@ -370,6 +371,10 @@ function renderTenantDetail(tenant) {
 
                 <textarea id="tenantRequestLinkBox" class="tenants-link-box" readonly>${escapeHtml(requestLink)}</textarea>
 
+                <button id="tenantGenerateNewLinkButton" class="tenants-main-button" style="width:100%; margin-top:12px; margin-bottom:12px;">
+                    Generate New Link
+                </button>
+
                 <div class="tenants-button-row three">
                     <button id="tenantCopyLinkButton" class="tenants-small-button">
                         Copy Link
@@ -404,15 +409,18 @@ function renderTenantDetail(tenant) {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_empty_unit_delete
+                tenants_grid.js | v2026_07_05_tenants_grid_generate_new_link
             </div>
         </div>
     `;
 
     attachTenantDetailHandlers();
 }
+
+
 function attachTenantDetailHandlers() {
     const backButton = document.getElementById('tenantDetailBackButton');
+    const generateNewLinkButton = document.getElementById('tenantGenerateNewLinkButton');
     const copyLinkButton = document.getElementById('tenantCopyLinkButton');
     const requestsButton = document.getElementById('tenantRequestsButton');
     const textCallButton = document.getElementById('tenantTextCallButton');
@@ -425,6 +433,12 @@ function attachTenantDetailHandlers() {
         backButton.onclick = async () => {
             renderFindTenantView();
             await loadTenantsForSearch();
+        };
+    }
+
+    if (generateNewLinkButton) {
+        generateNewLinkButton.onclick = async () => {
+            await handleGenerateNewTenantLink();
         };
     }
 
@@ -1345,6 +1359,49 @@ function attachTenantButtonHandlers() {
 /* ================================================================
    TENANT DETAIL ACTIONS
 ================================================================ */
+
+async function handleGenerateNewTenantLink() {
+    clearTenantsMessage();
+
+    if (!selectedTenant) {
+        showTenantsMessage('Tenant not found.', 'error');
+        return;
+    }
+
+    const button = document.getElementById('tenantGenerateNewLinkButton');
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Generating...';
+    }
+
+    const { data, error } = await generateNewTenantRequestLink(selectedTenant.id);
+
+    if (button) {
+        button.disabled = false;
+        button.textContent = 'Generate New Link';
+    }
+
+    if (error) {
+        showTenantsMessage(error.message || 'New link could not be generated.', 'error');
+        return;
+    }
+
+    selectedTenant = data || selectedTenant;
+
+    tenantsCache = tenantsCache.map((tenant) => {
+        if (String(tenant.id) === String(selectedTenant.id)) {
+            return selectedTenant;
+        }
+
+        return tenant;
+    });
+
+    renderTenantDetail(selectedTenant);
+    showTenantsMessage('New link generated. Old link no longer works.', 'success');
+}
+
+
 
 async function copyTenantRequestLink() {
     if (!selectedTenant) return;
