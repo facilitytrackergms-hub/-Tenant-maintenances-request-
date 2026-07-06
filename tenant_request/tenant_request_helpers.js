@@ -109,6 +109,7 @@ export function disableTenantRequestButton(isDisabled) {
 
 export function buildTenantRequestPayload({ tenant, formValues }) {
     return {
+        request_code: tenant?.request_public_uuid || tenant?.request_code || getSavedTenantRequestCode(),
         tenant_id: tenant?.id || null,
         location_id: tenant?.location_id || null,
         unit_number: tenant?.unit_number || formValues.unit_number || '',
