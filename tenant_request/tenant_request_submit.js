@@ -6,7 +6,7 @@
    UPDATED: 2026-06-30
 ================================================================ */
 
-import { createTenantMaintenanceRequest } from './tenant_request_data.js';
+import { createTenantMaintenanceRequest } from './tenant_request_data.js?v=20260705_public_uuid_fix_1';
 
 import {
     getInputValue,
