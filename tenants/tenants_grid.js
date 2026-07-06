@@ -1514,7 +1514,11 @@ function naturalUnitCompare(a, b) {
 }
 
 function buildTenantRequestLink(tenant) {
-    const requestCode = tenant?.request_code || tenant?.tenant_request_code || '';
+    const requestCode =
+        tenant?.request_public_uuid ||
+        tenant?.request_code ||
+        tenant?.tenant_request_code ||
+        '';
 
     const url = new URL(window.location.href);
     url.searchParams.delete('view');
