@@ -15,7 +15,7 @@ import {
     clearTenantRequestMessage,
     disableTenantRequestButton,
     buildTenantRequestPayload
-} from './tenant_request_helpers.js';
+} from './tenant_request_helpers.js?v=20260705_payload_request_code_fix_1';
 
 /* ================================================================
    ATTACH SUBMIT BUTTON
