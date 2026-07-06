@@ -11,9 +11,12 @@ import {
     createTenant,
     updateTenant,
     updateTenantStatus,
+    markTenantMovedOut,
+    deleteTenant,
     fetchTenantMaintenanceRequestsByTenantId,
     updateTenantMaintenanceRequest
 } from './tenants_data.js';
+
 
 import {
     getCurrentSession,
@@ -380,11 +383,17 @@ function renderTenantDetail(tenant) {
                         Text / Call
                     </button>
                 </div>
-
                 <button id="tenantEditButton" class="tenants-main-button" style="margin-top:12px;">
                     Edit Tenant
                 </button>
 
+                <button id="tenantMoveOutButton" class="tenants-warning-button" style="width:100%; margin-top:12px;">
+                    Move Out / Empty Unit
+                </button>
+
+                <button id="tenantDeleteButton" class="tenants-warning-button" style="width:100%; margin-top:12px;">
+                    Delete Tenant
+                </button>
                 <button id="tenantStatusButton" class="${isActive ? 'tenants-warning-button' : 'tenants-main-button'}">
                     ${isActive ? 'Deactivate Tenant' : 'Reactivate Tenant'}
                 </button>
@@ -407,6 +416,8 @@ function attachTenantDetailHandlers() {
     const requestsButton = document.getElementById('tenantRequestsButton');
     const textCallButton = document.getElementById('tenantTextCallButton');
     const editButton = document.getElementById('tenantEditButton');
+    const moveOutButton = document.getElementById('tenantMoveOutButton');
+    const deleteButton = document.getElementById('tenantDeleteButton');
     const statusButton = document.getElementById('tenantStatusButton');
 
     if (backButton) {
@@ -440,13 +451,24 @@ function attachTenantDetailHandlers() {
         };
     }
 
+    if (moveOutButton) {
+        moveOutButton.onclick = () => {
+            renderMoveOutWarningView();
+        };
+    }
+
+    if (deleteButton) {
+        deleteButton.onclick = () => {
+            renderDeleteTenantWarningView();
+        };
+    }
+
     if (statusButton) {
         statusButton.onclick = async () => {
             await handleTenantStatusToggle();
         };
     }
 }
-
 /* ================================================================
    EDIT TENANT VIEW
 ================================================================ */
@@ -572,7 +594,198 @@ async function handleUpdateTenant() {
     renderTenantDetail(selectedTenant);
     showTenantsMessage('Tenant updated.', 'success');
 }
+/* ================================================================
+   MOVE OUT / EMPTY UNIT VIEW
+================================================================ */
 
+function renderMoveOutWarningView() {
+    if (!selectedTenant) {
+        renderFindTenantView();
+        return;
+    }
+
+    tenantsContainer.innerHTML = `
+        <div class="tenants-page">
+            <div class="tenants-card">
+                <h1 class="tenants-title">Move Out / Empty Unit</h1>
+
+                <p class="tenants-subtitle">
+                    This marks the tenant inactive and keeps maintenance history.
+                </p>
+
+                <div class="tenants-detail-box">
+                    <div class="tenants-detail-row"><strong>Unit:</strong> ${escapeHtml(selectedTenant.unit_number || '')}</div>
+                    <div class="tenants-detail-row"><strong>Name:</strong> ${escapeHtml(selectedTenant.tenant_name || '')}</div>
+                    <div class="tenants-detail-row"><strong>Phone:</strong> ${escapeHtml(selectedTenant.phone || '')}</div>
+                </div>
+
+                <button id="tenantMoveOutCancelButton" class="tenants-small-button" style="width:100%; margin-bottom:14px;">
+                    Cancel - Back To Unit Detail
+                </button>
+
+                <button id="tenantConfirmMoveOutButton" class="tenants-warning-button" style="width:100%;">
+                    Confirm Move Out / Empty Unit
+                </button>
+
+                <div id="tenantsMessage" class="tenants-message"></div>
+            </div>
+
+            <div class="tenants-footer-tag">
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
+            </div>
+        </div>
+    `;
+
+    attachMoveOutWarningHandlers();
+}
+
+function attachMoveOutWarningHandlers() {
+    const cancelButton = document.getElementById('tenantMoveOutCancelButton');
+    const confirmButton = document.getElementById('tenantConfirmMoveOutButton');
+
+    if (cancelButton) {
+        cancelButton.onclick = () => {
+            renderTenantDetail(selectedTenant);
+        };
+    }
+
+    if (confirmButton) {
+        confirmButton.onclick = async () => {
+            await handleMoveOutTenant();
+        };
+    }
+}
+
+async function handleMoveOutTenant() {
+    clearTenantsMessage();
+
+    if (!selectedTenant) {
+        showTenantsMessage('Tenant not found.', 'error');
+        return;
+    }
+
+    setMoveOutButtonDisabled(true);
+
+    const { data, error } = await markTenantMovedOut({
+        tenantId: selectedTenant.id,
+        currentNotes: selectedTenant.notes || ''
+    });
+
+    setMoveOutButtonDisabled(false);
+
+    if (error) {
+        showTenantsMessage(error.message || 'Tenant could not be marked moved out.', 'error');
+        return;
+    }
+
+    selectedTenant = data || {
+        ...selectedTenant,
+        active_status: 'inactive'
+    };
+
+    tenantsCache = tenantsCache.map((tenant) => {
+        if (String(tenant.id) === String(selectedTenant.id)) {
+            return selectedTenant;
+        }
+
+        return tenant;
+    });
+
+    renderTenantDetail(selectedTenant);
+    showTenantsMessage('Unit marked empty.', 'success');
+}
+
+/* ================================================================
+   DELETE TENANT VIEW
+================================================================ */
+
+function renderDeleteTenantWarningView() {
+    if (!selectedTenant) {
+        renderFindTenantView();
+        return;
+    }
+
+    tenantsContainer.innerHTML = `
+        <div class="tenants-page">
+            <div class="tenants-card">
+                <h1 class="tenants-title">Delete Tenant</h1>
+
+                <p class="tenants-subtitle">
+                    Delete only test tenants or duplicate tenants.
+                </p>
+
+                <div class="tenants-detail-box">
+                    <div class="tenants-detail-row"><strong>Unit:</strong> ${escapeHtml(selectedTenant.unit_number || '')}</div>
+                    <div class="tenants-detail-row"><strong>Name:</strong> ${escapeHtml(selectedTenant.tenant_name || '')}</div>
+                    <div class="tenants-detail-row"><strong>Phone:</strong> ${escapeHtml(selectedTenant.phone || '')}</div>
+                </div>
+
+                <button id="tenantDeleteCancelButton" class="tenants-small-button" style="width:100%; margin-bottom:14px;">
+                    Cancel - Back To Unit Detail
+                </button>
+
+                <button id="tenantConfirmDeleteButton" class="tenants-warning-button" style="width:100%;">
+                    I Understand - Delete Tenant
+                </button>
+
+                <div id="tenantsMessage" class="tenants-message"></div>
+            </div>
+
+            <div class="tenants-footer-tag">
+                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
+            </div>
+        </div>
+    `;
+
+    attachDeleteTenantWarningHandlers();
+}
+
+function attachDeleteTenantWarningHandlers() {
+    const cancelButton = document.getElementById('tenantDeleteCancelButton');
+    const confirmButton = document.getElementById('tenantConfirmDeleteButton');
+
+    if (cancelButton) {
+        cancelButton.onclick = () => {
+            renderTenantDetail(selectedTenant);
+        };
+    }
+
+    if (confirmButton) {
+        confirmButton.onclick = async () => {
+            await handleDeleteTenant();
+        };
+    }
+}
+
+async function handleDeleteTenant() {
+    clearTenantsMessage();
+
+    if (!selectedTenant) {
+        showTenantsMessage('Tenant not found.', 'error');
+        return;
+    }
+
+    const tenantId = selectedTenant.id;
+
+    setDeleteTenantButtonDisabled(true);
+
+    const { error } = await deleteTenant(tenantId);
+
+    setDeleteTenantButtonDisabled(false);
+
+    if (error) {
+        showTenantsMessage(error.message || 'Tenant could not be deleted. Use Move Out / Empty Unit instead.', 'error');
+        return;
+    }
+
+    selectedTenant = null;
+    selectedTenantRequest = null;
+
+    renderFindTenantView();
+    await loadTenantsForSearch();
+
+    showTenantsMessage('Tenant deleted.', 'success');
+}
 /* ================================================================
    TENANT TEXT / CALL VIEW
 ================================================================ */
