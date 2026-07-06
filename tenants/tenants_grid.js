@@ -1621,6 +1621,14 @@ function setEditTenantButtonDisabled(isDisabled) {
     button.textContent = isDisabled ? 'Saving...' : 'Save Tenant';
 }
 
+function setDeleteTenantButtonDisabled(isDisabled) {
+    const button = document.getElementById('tenantConfirmDeleteButton');
+    if (!button) return;
+
+    button.disabled = isDisabled;
+    button.textContent = isDisabled ? 'Deleting...' : 'I Understand - Delete Tenant';
+}
+
 function setRequestSaveButtonDisabled(isDisabled) {
     const button = document.getElementById('requestSaveButton');
     if (!button) return;
