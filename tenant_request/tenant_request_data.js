@@ -41,7 +41,7 @@ export async function fetchTenantByRequestCode(requestCode) {
 ================================================================ */
 
 export async function createTenantMaintenanceRequest(payload) {
-    const requestCode = getSavedTenantRequestCode();
+    const requestCode = payload.request_code || getSavedTenantRequestCode();
 
     if (!requestCode) {
         return {
