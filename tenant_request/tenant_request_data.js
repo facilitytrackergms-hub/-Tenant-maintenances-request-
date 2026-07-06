@@ -2,8 +2,8 @@
    FACILITY TRACKER MODULAR VIEW SYSTEM
    PURPOSE: Tenant Maintenance Request Data Service
    LOCATION: /tenant_request/tenant_request_data.js
-   VERSION: v2026_07_02_tenant_request_data_hidden_code_support
-   UPDATED: 2026-07-02
+   VERSION: v2026_07_05_tenant_request_data_public_uuid_fix
+   UPDATED: 2026-07-05
 ================================================================ */
 
 import { supabase } from '../global_engine/supabaseClient.js';
@@ -25,7 +25,7 @@ export async function fetchTenantByRequestCode(requestCode) {
 
     const { data, error } = await supabase
         .rpc('get_tenant_by_request_code', {
-            request_code: requestCode
+            p_request_code: requestCode
         })
         .maybeSingle();
 
