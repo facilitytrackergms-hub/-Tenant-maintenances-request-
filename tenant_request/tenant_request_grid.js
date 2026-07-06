@@ -8,7 +8,7 @@
 
 import { fetchTenantByRequestCode } from './tenant_request_data.js?v=20260705_public_uuid_fix_1';
 import { renderTenantRequestForm } from './tenant_request_form.js';
-import { attachTenantRequestSubmitHandler } from './tenant_request_submit.js';
+import { attachTenantRequestSubmitHandler } from './tenant_request_submit.js?v=20260705_submit_public_uuid_fix_1';
 import { injectTenantRequestStyles } from './tenant_request_styles.js';
 import { getTenantRequestCode } from './tenant_request_helpers.js';
 
