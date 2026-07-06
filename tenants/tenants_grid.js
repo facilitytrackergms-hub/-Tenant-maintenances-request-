@@ -383,6 +383,7 @@ function renderTenantDetail(tenant) {
                         Text / Call
                     </button>
                 </div>
+
                 <button id="tenantEditButton" class="tenants-main-button" style="margin-top:12px;">
                     Edit Tenant
                 </button>
@@ -394,7 +395,8 @@ function renderTenantDetail(tenant) {
                 <button id="tenantDeleteButton" class="tenants-warning-button" style="width:100%; margin-top:12px;">
                     Delete Tenant
                 </button>
-                <button id="tenantStatusButton" class="${isActive ? 'tenants-warning-button' : 'tenants-main-button'}">
+
+                <button id="tenantStatusButton" class="${isActive ? 'tenants-warning-button' : 'tenants-main-button'}" style="width:100%; margin-top:12px;">
                     ${isActive ? 'Deactivate Tenant' : 'Reactivate Tenant'}
                 </button>
 
@@ -402,14 +404,13 @@ function renderTenantDetail(tenant) {
             </div>
 
             <div class="tenants-footer-tag">
-                tenants_grid.js | v2026_07_05_tenants_grid_edit_text_call
+                tenants_grid.js | v2026_07_05_tenants_grid_empty_unit_delete
             </div>
         </div>
     `;
 
     attachTenantDetailHandlers();
 }
-
 function attachTenantDetailHandlers() {
     const backButton = document.getElementById('tenantDetailBackButton');
     const copyLinkButton = document.getElementById('tenantCopyLinkButton');
