@@ -2,11 +2,11 @@
    FACILITY TRACKER MODULAR VIEW SYSTEM
    PURPOSE: Tenant Maintenance Request Grid Controller
    LOCATION: /tenant_request/tenant_request_grid.js
-   VERSION: v2026_06_29_tenant_request_grid
-   UPDATED: 2026-06-29
+   VERSION: v2026_07_05_tenant_request_grid_public_uuid_fix
+   UPDATED: 2026-07-05
 ================================================================ */
 
-import { fetchTenantByRequestCode } from './tenant_request_data.js';
+import { fetchTenantByRequestCode } from './tenant_request_data.js?v=20260705_public_uuid_fix_1';
 import { renderTenantRequestForm } from './tenant_request_form.js';
 import { attachTenantRequestSubmitHandler } from './tenant_request_submit.js';
 import { injectTenantRequestStyles } from './tenant_request_styles.js';
@@ -53,7 +53,7 @@ export async function renderTenantRequestGrid(containerOrContext = {}) {
             ${renderTenantRequestForm({ tenant })}
 
             <div class="tenant-request-footer-tag">
-                tenant_request_grid.js | v2026_06_29_tenant_request_grid
+                tenant_request_grid.js | v2026_07_05_tenant_request_grid_public_uuid_fix
             </div>
         </div>
     `;
@@ -110,7 +110,7 @@ function renderTenantRequestError(container, message) {
             </div>
 
             <div class="tenant-request-footer-tag">
-                tenant_request_grid.js | v2026_06_29_tenant_request_grid
+                tenant_request_grid.js | v2026_07_05_tenant_request_grid_public_uuid_fix
             </div>
         </div>
     `;
