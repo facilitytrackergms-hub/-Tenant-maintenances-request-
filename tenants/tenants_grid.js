@@ -768,24 +768,44 @@ async function handleDeleteTenant() {
 
     const tenantId = selectedTenant.id;
 
-    setDeleteTenantButtonDisabled(true);
+    const confirmButton = document.getElementById('tenantConfirmDeleteButton');
 
-    const { error } = await deleteTenant(tenantId);
-
-    setDeleteTenantButtonDisabled(false);
-
-    if (error) {
-        showTenantsMessage(error.message || 'Tenant could not be deleted. Use Move Out / Empty Unit instead.', 'error');
-        return;
+    if (confirmButton) {
+        confirmButton.disabled = true;
+        confirmButton.textContent = 'Deleting...';
     }
 
-    selectedTenant = null;
-    selectedTenantRequest = null;
+    try {
+        const { error } = await deleteTenant(tenantId);
 
-    renderFindTenantView();
-    await loadTenantsForSearch();
+        if (error) {
+            showTenantsMessage(error.message || 'Tenant could not be deleted. Use Move Out / Empty Unit instead.', 'error');
 
-    showTenantsMessage('Tenant deleted.', 'success');
+            if (confirmButton) {
+                confirmButton.disabled = false;
+                confirmButton.textContent = 'I Understand - Delete Tenant';
+            }
+
+            return;
+        }
+
+        selectedTenant = null;
+        selectedTenantRequest = null;
+
+        renderFindTenantView();
+        await loadTenantsForSearch();
+
+        showTenantsMessage('Tenant deleted.', 'success');
+    } catch (error) {
+        console.error('Delete tenant button error:', error);
+
+        showTenantsMessage('Delete failed. Check console error.', 'error');
+
+        if (confirmButton) {
+            confirmButton.disabled = false;
+            confirmButton.textContent = 'I Understand - Delete Tenant';
+        }
+    }
 }
 /* ================================================================
    TENANT TEXT / CALL VIEW
